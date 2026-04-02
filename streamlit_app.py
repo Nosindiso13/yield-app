@@ -15,8 +15,6 @@ import google.generativeai as genai
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
 MARKET_PATH = 'market_trends.csv'
 
-def hash_password(password):
-    return pwd_context.hash(password)
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -26,7 +24,7 @@ def verify_password(plain_password, hashed_password):
 # {username: {"password": hashed_password, "role": "user"}}
 if 'users' not in st.session_state:
     st.session_state.users = {
-        "testuser": {"password": hash_password("testpass"), "role": "user"},
+
         "admin": {"password": hash_password("adminpass"), "role": "admin"}
     }
 
