@@ -6,7 +6,7 @@ import os
 import io
 from PIL import Image
 import asyncio
-from passlib.context import CryptContext # For password hashing
+from passlib.contexts import CryptContext # For password hashing
 
 # Imports for Gemini API
 import google.generativeai as genai
