@@ -15,9 +15,6 @@ import google.generativeai as genai
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
 MARKET_PATH = 'market_trends.csv'
 
-# --- Security Configuration --- 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def hash_password(password):
     return pwd_context.hash(password)
 
