@@ -22,11 +22,9 @@ def verify_password(plain_password, hashed_password):
 # In-memory user store for demonstration. 
 # In a real application, this would be a database.
 # {username: {"password": hashed_password, "role": "user"}}
-if 'users' not in st.session_state:
-    st.session_state.users = {
 
-        "admin": {"password": hash_password("adminpass"), "role": "admin"}
-    }
+
+       
 
 # --- Caching Models for Efficiency ---
 @st.cache_resource
