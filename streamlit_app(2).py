@@ -20,8 +20,6 @@ from datetime import datetime, timedelta
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
 MARKET_PATH = 'market_trends.csv'
 
-# Security settings (local to Streamlit now)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Database Setup (local to Streamlit now)
 SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
