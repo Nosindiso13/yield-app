@@ -117,9 +117,6 @@ def detect_pest_helper(image_bytes: bytes, pest_model_local) -> list[dict]:
         results = [{"label": label, "description": description, "probability": float(prob)}
                    for (_, label, prob) in decoded_preds]
         return results
-    except Exception as e:
-        st.error(f"Image processing or pest detection failed: {e}")
-        return []
 
 async def get_gemini_response(message: str, gemini_model_local) -> str:
     if gemini_model_local is None:
