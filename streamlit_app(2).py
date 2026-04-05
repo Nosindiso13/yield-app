@@ -24,8 +24,7 @@ MARKET_PATH = 'market_trends.csv'
 # Database Setup (local to Streamlit now)
 SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 
-SessionLocal = session
-Base = declarative_base()
+
 
 # --- SQLAlchemy Models ---
 class DBUser(Base):
