@@ -25,8 +25,7 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 
 
 # --- SQLAlchemy Models ---
- class DBUser(Base):
-    pass
+ 
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
