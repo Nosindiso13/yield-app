@@ -11,9 +11,6 @@ from datetime import datetime, timedelta
 
 # Database imports
 
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-
 # Import for Gemini API
 import google.generativeai as genai
 
