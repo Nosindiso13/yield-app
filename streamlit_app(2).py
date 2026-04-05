@@ -209,8 +209,7 @@ def register_form():
 if not st.session_state.logged_in:
     st.sidebar.title("Authentication")
     auth_option = st.sidebar.radio("", ["Login", "Register"])
-    if auth_option == "Login":
-
+    
 
 # --- Main App Content (only shown if logged in) ---
 st.sidebar.write(f"Logged in as: {st.session_state.username}") # Role not strictly needed here
