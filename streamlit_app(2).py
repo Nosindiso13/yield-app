@@ -72,15 +72,15 @@ def load_pest_detection_model():
         model = MobileNetV2(weights='imagenet')
         return model
     except Exception as e:
-        st.error(f"Error loading Pest Detection model: {e}")
+
         return None
 
 @st.cache_resource
 def load_gemini_model():
     try:
-        api_key = os.getenv('YIELD_API_KEY') # Retrieve from environment variable
+        api_key = os.getenv('yield_key') # Retrieve from environment variable
         if not api_key:
-            st.error("Google API Key not found. Please ensure 'YIELD_API_KEY' environment variable is set.")
+            st.error("Google API Key not found. ")
             return None
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-pro')
@@ -102,8 +102,7 @@ def predict_yield_helper(input_data_df: pd.DataFrame, model_pipeline_local) -> l
 
 def detect_pest_helper(image_bytes: bytes, pest_model_local) -> list[dict]:
     if pest_model_local is None:
-        st.error("Pest Detection Model is not loaded.")
-        return []
+        
     try:
         # Ensure tensorflow imports are local to this function for consistency with load_pest_detection_model
         import tensorflow as tf
