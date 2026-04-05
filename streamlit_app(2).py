@@ -30,12 +30,7 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 
 
           
-    username = Column(String, unique=True, index=True)
-       email = Column(String, unique=True, index=True, nullable=True)
-  full_name = Column(String, nullable=True)
-    hashed_password = Column(String)
-    disabled = Column(Boolean, default=False)
-
+   
 # --- User Management Functions ---
 def get_password_hash(password):
     return pwd_context.hash(password)
