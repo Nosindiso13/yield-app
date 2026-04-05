@@ -22,7 +22,7 @@ MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
 SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 
 
-Base = declarative_base()
+
 
 # --- SQLAlchemy Models ---
 class DBUser(Base):
