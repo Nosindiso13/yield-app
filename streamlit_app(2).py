@@ -21,7 +21,7 @@ MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
 # Database Setup (local to Streamlit now)
 SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 Base = declarative_base()
 
 # --- SQLAlchemy Models ---
