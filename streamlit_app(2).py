@@ -256,9 +256,7 @@ with tabs[0]:
                     st.success(f'Estimated Yield: {predicted_yield:,.2f} hg/ha')
                 else:
                     st.error("Prediction could not be made.")
-            else:
-                st.warning("Crop Yield Model not available. Please check the logs.")
-
+            
 with tabs[1]:
     st.header('Pest Identification')
     file = st.file_uploader('Upload leaf or pest image', type=['jpg', 'png'])
@@ -275,7 +273,7 @@ with tabs[1]:
             else:
                 st.info("No significant detections found.")
         else:
-            st.warning("Pest Detection Model not available. Please check the logs.")                                                                      
+                                                                                
 with tabs[2]:
     st.header('AI Chatbot')
     if 'messages' not in st.session_state: st.session_state.messages = []
@@ -289,7 +287,7 @@ with tabs[2]:
                 st.session_state.messages.append({'role': 'assistant', 'content': response_text})
                 st.chat_message('assistant').write(response_text)
             else:
-                error_msg = "AI chat model not available. Please check API key configuration."
+              
                 st.error(error_msg)
                 st.session_state.messages.append({'role': 'assistant', 'content': error_msg})
                 st.chat_message('assistant').write(error_msg)
