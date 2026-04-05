@@ -49,7 +49,6 @@ def get_db():
 @st.cache_resource
 def load_crop_yield_model():
     if not os.path.exists(MODEL_PATH):
-        st.error(f"Crop Yield Model file not found at {MODEL_PATH}.")
         return None
     try:
         pipeline = joblib.load(MODEL_PATH)
@@ -80,7 +79,7 @@ def load_gemini_model():
     try:
         api_key = os.getenv('yield_key') # Retrieve from environment variable
         if not api_key:
-            st.error("Google API Key not found. ")
+           
             return None
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-pro')
