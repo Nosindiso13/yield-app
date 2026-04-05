@@ -29,7 +29,7 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 # --- SQLAlchemy Models ---
 
 
-          id = Column(Integer, primary_key=True, index=True)
+          
     username = Column(String, unique=True, index=True)
        email = Column(String, unique=True, index=True, nullable=True)
   full_name = Column(String, nullable=True)
