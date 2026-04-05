@@ -7,7 +7,6 @@ xgboost
 Pillow
 google-generativeai
 sqlalchemy
-fastapi
 passlib
 python-jose[cryptography]
 uvicorn
