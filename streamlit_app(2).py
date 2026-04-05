@@ -272,7 +272,6 @@ with tabs[1]:
                     st.write(f"- **{detection['description']}** (Confidence: {detection['probability']:.2f})")
             else:
                 st.info("No significant detections found.")
-        else:
                                                                                 
 with tabs[2]:
     st.header('AI Chatbot')
