@@ -9,6 +9,10 @@ from datetime import datetime, timedelta
 
 # Authentication imports
 from passlib.context import CryptContext
+pwd_context =CryptContext(schemes=["bcrypt"], default="bcrypt")
+hash = pwd_context.hash("my_password")
+pwd_context.verify("my_password",hash)  #returns true
+
 
 # Database imports
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
