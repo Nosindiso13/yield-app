@@ -125,7 +125,7 @@ async def get_gemini_response(message: str, gemini_model_local) -> str:
 @st.cache_resource
 def initialize_database():
     Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
+    
     TEST_USERNAME = "testuser"
     TEST_PASSWORD = "testpassword123"
     db_user = db.query(DBUser).filter(DBUser.username == TEST_USERNAME).first()
@@ -138,7 +138,7 @@ def initialize_database():
         st.success(f"Default test user '{TEST_USERNAME}' registered during startup.")
     db.close()
 
-initialize_database()
+
 
 crop_yield_pipeline = load_crop_yield_model()
 pest_detection_model = load_pest_detection_model()
@@ -278,7 +278,7 @@ with tabs[2]:
                 response_text = asyncio.run(get_gemini_response(prompt, gemini_llm))
                 st.session_state.messages.append({'role': 'assistant', 'content': response_text})
                 st.chat_message('assistant').write(response_text)
-            else:
+            
                 error_msg = "AI chat model not available. Please check API key configuration."
                 st.error(error_msg)
                 st.session_state.messages.append({'role': 'assistant', 'content': error_msg})
