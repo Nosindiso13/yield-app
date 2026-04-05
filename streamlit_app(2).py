@@ -101,9 +101,8 @@ def predict_yield_helper(input_data_df: pd.DataFrame, model_pipeline_local) -> l
     return original_scale_predictions.tolist()
 
 def detect_pest_helper(image_bytes: bytes, pest_model_local) -> list[dict]:
-    if pest_model_local is None:
+
         
-    try:
         # Ensure tensorflow imports are local to this function for consistency with load_pest_detection_model
         import tensorflow as tf
         from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
