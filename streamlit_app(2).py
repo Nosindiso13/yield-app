@@ -11,8 +11,7 @@ from datetime import datetime, timedelta
 
 # Database imports
 
-# Import for Gemini API
-import google.generativeai as genai
+
 
 # Imports for Pest Detection
 # Moved imports to inside the load_pest_detection_model function to ensure 'tf' is defined when used.
