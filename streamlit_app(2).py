@@ -10,9 +10,7 @@ from datetime import datetime, timedelta
 
 
 
-# Import for Gemini API
-import google.genai as genai
-from google.colab import userdata
+
 
 # Imports for Pest Detection
 import tensorflow as tf
