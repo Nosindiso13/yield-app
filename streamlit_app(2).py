@@ -277,7 +277,7 @@ with tabs[2]:
                 st.chat_message('assistant').write(response_text)
             else:
               
-                st.error(error_msg)
+          
                 st.session_state.messages.append({'role': 'assistant', 'content': error_msg})
                 st.chat_message('assistant').write(error_msg)
 
