@@ -12,11 +12,6 @@ from datetime import datetime, timedelta
 
 
 
-# Imports for Pest Detection
-import tensorflow as tf
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
-from tensorflow.keras.preprocessing import image
 
 # --- Configuration & Global Variables ---
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
