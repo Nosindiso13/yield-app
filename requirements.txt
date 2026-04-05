@@ -1,9 +1,0 @@
-streamlit
-pandas
-numpy
-joblib
-scikit-learn
-xgboost
-Pillow
-google-generativeai
-passlib
