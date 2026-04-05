@@ -7,13 +7,8 @@ from PIL import Image
 import asyncio
 from datetime import datetime, timedelta
 
-# Authentication imports
 
 
-# Database imports
-
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
 
 # Import for Gemini API
 import google.genai as genai
