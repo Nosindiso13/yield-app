@@ -137,7 +137,7 @@ async def get_gemini_response(message: str, gemini_model_local) -> str:
 # --- Main App Logic ---
 @st.cache_resource
 def initialize_database():
-    Base.metadata.create_all(bind=engine)
+    
     db = SessionLocal()
     TEST_USERNAME = "testuser"
     TEST_PASSWORD = "testpassword123"
@@ -151,14 +151,12 @@ def initialize_database():
         st.success(f"Default test user '{TEST_USERNAME}' registered during startup.")
     db.close()
 
-initialize_database()
-
 crop_yield_pipeline = load_crop_yield_model()
 pest_detection_model = load_pest_detection_model()
 gemini_llm = load_gemini_model()
 
-st.set_page_config(page_title='Farmer Advisor & Marketplace', layout='wide')
-st.title('🌾 Crop Advisor & Marketplace')
+st.set_page_config(page_title='Crop Advisory and yield prediction system', layout='wide')
+st.title('welcome to your crop advisory system')
 
 # --- Authentication Logic (Direct DB Interaction) ---
 if 'logged_in' not in st.session_state:
@@ -277,8 +275,7 @@ with tabs[1]:
             else:
                 st.info("No significant detections found.")
         else:
-            st.warning("Pest Detection Model not available. Please check the logs.")
-
+            st.warning("Pest Detection Model not available. Please check the logs.")                                                                      
 with tabs[2]:
     st.header('AI Chatbot')
     if 'messages' not in st.session_state: st.session_state.messages = []
