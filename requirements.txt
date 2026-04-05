@@ -1,0 +1,14 @@
+streamlit
+pandas
+numpy
+joblib
+scikit-learn
+xgboost
+Pillow
+google-generativeai
+sqlalchemy
+fastapi
+passlib
+python-jose[cryptography]
+uvicorn
+tensorflow
