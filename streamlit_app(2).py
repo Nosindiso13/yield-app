@@ -190,7 +190,7 @@ def register_form():
             elif len(new_password) < 6:
                 st.error("Password must be at least 6 characters long.")
             else:
-                db = next(get_db())
+          
                 db_user = db.query(DBUser).filter(DBUser.username == new_username).first()
                 if db_user:
                     st.error("Username already registered")
@@ -210,7 +210,7 @@ if not st.session_state.logged_in:
     st.sidebar.title("Authentication")
     auth_option = st.sidebar.radio("", ["Login", "Register"])
     if auth_option == "Login":
-        login_form()
+login_form()
     else:
         register_form()
     st.stop() # Stop execution if not logged in
