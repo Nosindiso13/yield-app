@@ -4,7 +4,6 @@ import numpy as np
 import os
 import io
 from PIL import Image
-import joblib
 from openai import OpenAI
 
 # ---------------- CONFIG ----------------
