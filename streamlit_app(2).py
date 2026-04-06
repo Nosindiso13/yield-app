@@ -162,7 +162,10 @@ with tabs[2]:
             "role": "assistant",
             "content": response
         })
-        st.chat_message("assistant").write(response)
+        st.chat_message("assistant").write(response) 
+ # =======================
+# Farmer Market & Trending Crops
+# =======================
         with tabs[3]:
     st.header('🛒 Farmer Marketplace & Trending Crops')
     col1, col2 = st.columns(2)
@@ -175,9 +178,9 @@ with tabs[2]:
     with col2:
         st.subheader('List Your Crop for Sale')
         with st.form('market_form'):
-            seller_name = st.text_input('Name')
+            seller_name = st.text_input('Name','contact')
             crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
             quantity = st.number_input('Quantity (kg)', min_value=1)
-            price = st.number_input('Asking Price ($)', min_value=1)
+            price = st.number_input('Asking Price (ZMW)', min_value=1)
             if st.form_submit_button('Post Listing'):
-                st.success(f'Listing created for {seller_name}! Others can now see your {crop_type}.')
+                st.success(f'Listing created for {seller_name}.')
