@@ -163,3 +163,21 @@ with tabs[2]:
             "content": response
         })
         st.chat_message("assistant").write(response)
+        with tabs[3]:
+    st.header('🛒 Farmer Marketplace & Trending Crops')
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader('Trending Crops This Season')
+        if os.path.exists(MARKET_PATH):
+            df_trends = pd.read_csv(MARKET_PATH)
+            st.dataframe(df_trends, use_container_width=True)
+        else: st.info('No trend data available.')
+    with col2:
+        st.subheader('List Your Crop for Sale')
+        with st.form('market_form'):
+            seller_name = st.text_input('Name')
+            crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
+            quantity = st.number_input('Quantity (kg)', min_value=1)
+            price = st.number_input('Asking Price ($)', min_value=1)
+            if st.form_submit_button('Post Listing'):
+                st.success(f'Listing created for {seller_name}! Others can now see your {crop_type}.')
