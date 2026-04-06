@@ -4,298 +4,164 @@ import numpy as np
 import os
 import io
 from PIL import Image
-import asyncio
-from datetime import datetime, timedelta
+import joblib
+from openai import OpenAI
 
-
-
-# Database imports
-
-
-
-# Imports for Pest Detection
-# Moved imports to inside the load_pest_detection_model function to ensure 'tf' is defined when used.
-
-# --- Configuration & Global Variables ---
+# ---------------- CONFIG ----------------
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
-MARKET_PATH = 'market_trends.csv'
 
-
-# Database Setup (local to Streamlit now)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-
-
-
-# --- SQLAlchemy Models ---
-
-
-          
-   
-# --- User Management Functions ---
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# --- Caching Models for Efficiency ---
+# ---------------- LOAD MODELS ----------------
 @st.cache_resource
 def load_crop_yield_model():
     if not os.path.exists(MODEL_PATH):
+        st.warning("Model not found. Using demo prediction.")
         return None
-    try:
-        pipeline = joblib.load(MODEL_PATH)
-        return pipeline
-    except Exception as e:
-        st.error(f"Error loading Crop Yield model: {e}")
-        return None
+    return joblib.load(MODEL_PATH)
 
 @st.cache_resource
-def load_pest_detection_model():
+def load_pest_model():
+    from tensorflow.keras.applications import MobileNetV2
+    return MobileNetV2(weights="imagenet")
+
+@st.cache_resource
+def load_openai_client():
     try:
-        # Imports moved here to ensure 'tf' is defined within this function's scope.
-        import tensorflow as tf
-        from tensorflow.keras.applications import MobileNetV2
+        return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    except Exception as e:
+        st.error(f"OpenAI error: {e}")
+        return None
+
+model = load_crop_yield_model()
+pest_model = load_pest_model()
+openai_client = load_openai_client()
+
+# ---------------- FUNCTIONS ----------------
+def predict_yield(input_df):
+    if model is None:
+        return [np.random.uniform(1000, 5000)]
+
+    cols = ['Area', 'Item', 'Year', 'rainfall', 'pesticides', 'temperature']
+    input_df = input_df[cols]
+
+    pred = model.predict(input_df)
+    return np.expm1(pred)
+
+
+def get_openai_response(prompt):
+    if openai_client is None:
+        return "⚠️ OpenAI not configured. Add your API key."
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are an agricultural expert helping farmers in Zambia.
+                    Give simple, practical, and actionable farming advice."""
+                },
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Error: {e}"
+
+
+# ---------------- UI ----------------
+st.set_page_config(page_title="Crop Advisory System", layout="wide")
+st.title("🌾 AI Crop Advisory & Yield Prediction System")
+
+tabs = st.tabs([
+    "📈 Yield Prediction",
+    "🐛 Pest Detection",
+    "🦾 AI Advisor"
+])
+
+# =======================
+# 📈 YIELD PREDICTION
+# =======================
+with tabs[0]:
+    st.header("Crop Yield Prediction")
+
+    with st.form("prediction_form"):
+        area = st.selectbox("Area", ["Zambia", "Zimbabwe"])
+        crop = st.selectbox("Crop", ["Wheat", "Maize", "Rice", "Sorghum", "Soybeans"])
+        year = st.number_input("Year", 2024, 2035, 2025)
+        rainfall = st.slider("Rainfall (mm)", 0, 3000, 1000)
+        pesticides = st.slider("Pesticides", 0, 10000, 2000)
+        temperature = st.slider("Temperature (°C)", 10, 40, 25)
+
+        submit = st.form_submit_button("Predict")
+
+        if submit:
+            data = pd.DataFrame([{
+                "Area": area,
+                "Item": crop,
+                "Year": year,
+                "rainfall": rainfall,
+                "pesticides": pesticides,
+                "temperature": temperature
+            }])
+
+            prediction = predict_yield(data)
+            st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
+
+
+# =======================
+# 🐛 PEST DETECTION
+# =======================
+with tabs[1]:
+    st.header("Pest Detection")
+
+    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png"])
+
+    if uploaded_file:
+        st.image(uploaded_file)
+
         from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
         from tensorflow.keras.preprocessing import image
 
-        # Explicitly configure TensorFlow to use CPU only
-        tf.config.set_visible_devices([], 'GPU')
-        model = MobileNetV2(weights='imagenet')
-        return model
-    except Exception as e:
-
-        return None
-
-@st.cache_resource
-def load_gemini_model():
-    try:
-        api_key = os.getenv('yield_key') # Retrieve from environment variable
-        if not api_key:
-           
-            return None
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
-        return model
-    except Exception as e:
-        st.error(f"Error initializing Gemini model: {e}")
-        return None
-
-# --- Helper Functions ---
-def predict_yield_helper(input_data_df: pd.DataFrame, model_pipeline_local) -> list[float]:
-    if model_pipeline_local is None:
-        st.error("Crop Yield Model is not loaded.")
-        return []
-    expected_columns = ['Area', 'Item', 'Year', 'rainfall', 'pesticides', 'temperature']
-    df_processed = input_data_df[expected_columns]
-    log_predictions = model_pipeline_local.predict(df_processed)
-    original_scale_predictions = np.expm1(log_predictions)
-    return original_scale_predictions.tolist()
-
-def detect_pest_helper(image_bytes: bytes, pest_model_local) -> list[dict]:
-
-        
-        # Ensure tensorflow imports are local to this function for consistency with load_pest_detection_model
-        import tensorflow as tf
-        from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
-        from tensorflow.keras.preprocessing import image
-
-        img = Image.open(io.BytesIO(image_bytes)).resize((224, 224))
+        img = Image.open(uploaded_file).resize((224, 224))
         x = image.img_to_array(img)
         x = np.expand_dims(x, axis=0)
         x = preprocess_input(x)
-        preds = pest_model_local.predict(x)
-        decoded_preds = decode_predictions(preds, top=3)[0]
-        results = [{"label": label, "description": description, "probability": float(prob)}
-                   for (_, label, prob) in decoded_preds]
-        return results
 
-async def get_gemini_response(message: str, gemini_model_local) -> str:
-    if gemini_model_local is None:
-        st.error("Gemini model is not initialized.")
-        return "Error: Gemini model not available."
-    try:
-        response = await gemini_model_local.generate_content_async(message)
-        return response.text
-    except Exception as e:
-        st.error(f"Gemini API call failed: {e}")
-        return "Error: Could not get a response from AI."
+        preds = pest_model.predict(x)
+        results = decode_predictions(preds, top=3)[0]
 
-# --- Main App Logic ---
-@st.cache_resource
-def initialize_database():
-    
-    db = SessionLocal()
-    TEST_USERNAME = "testuser"
-    TEST_PASSWORD = "testpassword123"
-    db_user = db.query(DBUser).filter(DBUser.username == TEST_USERNAME).first()
-    if not db_user:
-        hashed_password = get_password_hash(TEST_PASSWORD)
-        new_user = DBUser(username=TEST_USERNAME, hashed_password=hashed_password)
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        st.success(f"Default test user '{TEST_USERNAME}' registered during startup.")
-    db.close()
-
-crop_yield_pipeline = load_crop_yield_model()
-pest_detection_model = load_pest_detection_model()
-gemini_llm = load_gemini_model()
-
-st.set_page_config(page_title='Crop Advisory and yield prediction system', layout='wide')
-st.title('welcome to your crop advisory system')
-
-# --- Authentication Logic (Direct DB Interaction) ---
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.username = None
-
-def login_form():
-    st.subheader("Login")
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
-
-        if submitted:
-            db = next(get_db())
-            user_data = db.query(DBUser).filter(DBUser.username == username).first()
-            db.close()
-            if user_data and verify_password(password, user_data.hashed_password):
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.success(f"Welcome, {username}!")
-                st.experimental_rerun()
-            else:
-                st.error("Incorrect username or password.")
-
-def register_form():
-    st.subheader("Register New User")
-    with st.form("register_form"):
-        new_username = st.text_input("New Username")
-        new_password = st.text_input("New Password", type="password")
-        confirm_password = st.text_input("Confirm Password", type="password")
-        submitted = st.form_submit_button("Register")
-
-        if submitted:
-            if new_password != confirm_password:
-                st.error("Passwords do not match.")
-            elif len(new_password) < 6:
-                st.error("Password must be at least 6 characters long.")
-            else:
-          
-                db_user = db.query(DBUser).filter(DBUser.username == new_username).first()
-                if db_user:
-                    st.error("Username already registered")
-                    db.close()
-                else:
-                    hashed_password = get_password_hash(new_password)
-                    new_db_user = DBUser(username=new_username, hashed_password=hashed_password)
-                    db.add(new_db_user)
-                    db.commit()
-                    db.refresh(new_db_user)
-                    db.close()
-                    st.success("Registration successful! Please login.")
-                    st.session_state.logged_in = False
-                    st.experimental_rerun()
-
-if not st.session_state.logged_in:
-    st.sidebar.title("Authentication")
-    auth_option = st.sidebar.radio("", ["Login", "Register"])
-  # --- Main App Content (only shown if logged in) ---
-st.sidebar.write(f"Logged in as: {st.session_state.username}") # Role not strictly needed here
-if st.sidebar.button("Logout"):
-    st.session_state.logged_in = False
-    st.session_state.username = none 
-      
+        st.subheader("Results:")
+        for r in results:
+            st.write(f"{r[1]} ({r[2]:.2f})")
 
 
-
-tabs = st.tabs(['📈 Yield Prediction', '🐛 Pest Detection', '🦾 AI Advisor', '🛒 Market & Trends'])
-
-with tabs[0]:
-    st.header('Yield Prediction')
-    with st.form('yield_form'):
-        area = st.selectbox('Area', ['Zambia', 'Zimbabwe'])
-        item = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
-        year = st.number_input('Year', 2024, 2030, 2025)
-        rain = st.slider('Rainfall (mm)', 0, 3500, 1000)
-        pest = st.slider('Pesticides (tonnes)', 0, 150000, 5000)
-        temp = st.slider('Temp (°C)', 10, 45, 25)
-        if st.form_submit_button('Predict'):
-            input_data = {
-                "Area": area,
-                "Item": item,
-                "Year": year,
-                "rainfall": float(rain),
-                "pesticides": float(pest),
-                "temperature": float(temp)
-            }
-            input_df = pd.DataFrame([input_data])
-            if crop_yield_pipeline:
-                predicted_yields = predict_yield_helper(input_df, crop_yield_pipeline)
-                if predicted_yields:
-                    predicted_yield = predicted_yields[0]
-                    st.success(f'Estimated Yield: {predicted_yield:,.2f} hg/ha')
-                else:
-                    st.error("Prediction could not be made.")
-            
-with tabs[1]:
-    st.header('Pest Identification')
-    file = st.file_uploader('Upload leaf or pest image', type=['jpg', 'png'])
-    if file:
-        st.image(file, caption="Uploaded Image", use_column_width=True)
-        st.write('Detecting pest...')
-        image_bytes = file.getvalue()
-        if pest_detection_model:
-            detections = detect_pest_helper(image_bytes, pest_detection_model)
-            if detections:
-                st.success("Detection Results:")
-                for detection in detections:
-                    st.write(f"- **{detection['description']}** (Confidence: {detection['probability']:.2f})")
-            else:
-                st.info("No significant detections found.")
-                                                                                
+# =======================
+# 🦾 AI ADVISOR (OPENAI)
+# =======================
 with tabs[2]:
-    st.header('AI Chatbot')
-    if 'messages' not in st.session_state: st.session_state.messages = []
-    for m in st.session_state.messages: st.chat_message(m['role']).write(m['content'])
-    if prompt := st.chat_input('How can I improve my soil?'):
-        st.session_state.messages.append({'role': 'user', 'content': prompt})
-        st.chat_message('user').write(prompt)
-        with st.spinner("Getting advice from the AI..."):
-            if gemini_llm:
-                response_text = asyncio.run(get_gemini_response(prompt, gemini_llm))
-                st.session_state.messages.append({'role': 'assistant', 'content': response_text})
-                st.chat_message('assistant').write(response_text)
-            else:
-              
-          
-                st.session_state.messages.append({'role': 'assistant', 'content': error_msg})
-                st.chat_message('assistant').write(error_msg)
+    st.header("AI Crop Advisor (Powered by OpenAI)")
 
-with tabs[3]:
-    st.header('🛒 Farmer Marketplace & Trending Crops')
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader('Trending Crops This Season')
-        if os.path.exists(MARKET_PATH):
-            df_trends = pd.read_csv(MARKET_PATH)
-            st.dataframe(df_trends, use_container_width=True)
-        else: st.info('No trend data available.')
-    with col2:
-        st.subheader('List Your Crop for Sale')
-        with st.form('market_form'):
-            seller_name = st.text_input('Name')
-            crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
-            quantity = st.number_input('Quantity (kg)', min_value=1)
-            price = st.number_input('Asking Price ($)', min_value=1)
-            if st.form_submit_button('Post Listing'):
-                st.success(f'Listing created for {seller_name}! Others can now see your {crop_type}.')
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display chat history
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg["content"])
+
+    # User input
+    if prompt := st.chat_input("Ask about crops, soil, pests..."):
+        st.session_state.messages.append({
+            "role": "user",
+            "content": prompt
+        })
+        st.chat_message("user").write(prompt)
+
+        with st.spinner("Thinking..."):
+            response = get_openai_response(prompt)
+
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": response
+        })
+        st.chat_message("assistant").write(response)
