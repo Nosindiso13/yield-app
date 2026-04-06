@@ -213,7 +213,7 @@ if not st.session_state.logged_in:
 st.sidebar.write(f"Logged in as: {st.session_state.username}") # Role not strictly needed here
 if st.sidebar.button("Logout"):
     st.session_state.logged_in = False
-    st.session_state.username = creator
+    st.session_state.username = none 
       
 
 
