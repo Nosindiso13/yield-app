@@ -31,8 +31,7 @@ def load_openai_client():
         return None
 
 model = load_crop_yield_model()
-pest_model = load_pest_model()
-openai_client = load_openai_client()
+
 
 # ---------------- FUNCTIONS ----------------
 def predict_yield(input_df):
