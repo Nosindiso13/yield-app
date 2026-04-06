@@ -166,7 +166,7 @@ with tabs[2]:
  # =======================
 # Farmer Market & Trending Crops
 # =======================
-        with tabs[3]:
+with tabs[3]:
     st.header("🛒 Farmer Marketplace & Trending Crops")
     col1, col2 = st.columns(2)
     with col1:
