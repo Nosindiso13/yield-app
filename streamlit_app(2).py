@@ -215,8 +215,8 @@ if not st.session_state.logged_in:
 st.sidebar.write(f"Logged in as: {st.session_state.username}") # Role not strictly needed here
 if st.sidebar.button("Logout"):
     st.session_state.logged_in = False
-    st.session_state.username = None
-    st.experimental_rerun()
+    st.session_state.username = creator
+    
 
 tabs = st.tabs(['📈 Yield Prediction', '🐛 Pest Detection', '🦾 AI Advisor', '🛒 Market & Trends'])
 
