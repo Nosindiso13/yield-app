@@ -30,6 +30,72 @@ def load_openai_client():
         st.error(f"OpenAI error: {e}")
         return None
 
+
+# --- Authentication Logic (Direct DB Interaction) ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = None
+
+def login_form():
+    st.subheader("Login")
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Login")
+
+        if submitted:
+            db = next(get_db())
+            user_data = db.query(DBUser).filter(DBUser.username == username).first()
+            db.close()
+            if user_data and verify_password(password, user_data.hashed_password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success(f"Welcome, {username}!")
+                st.experimental_rerun()
+            else:
+                st.error("Incorrect username or password.")
+
+def register_form():
+    st.subheader("Register New User")
+    with st.form("register_form"):
+        new_username = st.text_input("New Username")
+        new_password = st.text_input("New Password", type="password")
+        confirm_password = st.text_input("Confirm Password", type="password")
+        submitted = st.form_submit_button("Register")
+
+        if submitted:
+            if new_password != confirm_password:
+                st.error("Passwords do not match.")
+            elif len(new_password) < 6:
+                st.error("Password must be at least 6 characters long.")
+            else:
+          
+                db_user = db.query(DBUser).filter(DBUser.username == new_username).first()
+                if db_user:
+                    st.error("Username already registered")
+                    db.close()
+                else:
+                    hashed_password = get_password_hash(new_password)
+                    new_db_user = DBUser(username=new_username, hashed_password=hashed_password)
+                    db.add(new_db_user)
+                    db.commit()
+                    db.refresh(new_db_user)
+                    db.close()
+                    st.success("Registration successful! Please login.")
+                    st.session_state.logged_in = False
+                    st.experimental_rerun()
+
+if not st.session_state.logged_in:
+    st.sidebar.title("Authentication")
+    auth_option = st.sidebar.radio("", ["Login", "Register"])
+  # --- Main App Content (only shown if logged in) ---
+st.sidebar.write(f"Logged in as: {st.session_state.username}") # Role not strictly needed here
+if st.sidebar.button("Logout"):
+    st.session_state.logged_in = False
+    st.session_state.username = none 
+      
+
+
 model = load_crop_yield_model()
 
 
@@ -74,7 +140,8 @@ st.title("🌾 AI Crop Advisory & Yield Prediction System")
 tabs = st.tabs([
     "📈 Yield Prediction",
     "🐛 Pest Detection",
-    "🦾 AI Advisor"
+    "🦾 AI Advisor",
+    "🛒Farmer Market & Trends"
 ])
 
 # =======================
