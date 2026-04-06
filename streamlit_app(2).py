@@ -4,7 +4,7 @@ import numpy as np
 import os
 import io
 from PIL import Image
-from openai import OpenAI
+
 
 # ---------------- CONFIG ----------------
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
