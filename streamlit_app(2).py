@@ -193,8 +193,8 @@ with tabs[1]:
         
 
         st.subheader("Results:")
-        for r in results:
-            st.write(f"{r[1]} ({r[2]:.2f})")
+        for R in Results:
+            st.write(f"{R[1]} ({R[2]:.2f})")
 
 
 # =======================
