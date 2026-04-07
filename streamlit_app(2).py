@@ -9,8 +9,7 @@ from PIL import Image
 # ==============================
 # DATABASE SETUP (SQLAlchemy)
 # ==============================
-engine = create_engine("sqlite:///users.db")
-Base = declarative_base()
+
 
 class User(Base):
     _tablename_ = "users"
