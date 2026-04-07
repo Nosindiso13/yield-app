@@ -2,248 +2,232 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
-import io
+import sqlite3
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import sessionmaker, declarative_base
 from PIL import Image
+import joblib
 
+# ==============================
+# DATABASE SETUP (SQLAlchemy)
+# ==============================
+engine = create_engine("sqlite:///users.db")
+Base = declarative_base()
 
-# ---------------- CONFIG ----------------
-MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
+class User(Base):
+    _tablename_ = "users"
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    password = Column(String)
 
-# ---------------- LOAD MODELS ----------------
-@st.cache_resource
-def load_crop_yield_model():
-    if not os.path.exists(MODEL_PATH):
-    
-        return None
-    return joblib.load(MODEL_PATH)
+Base.metadata.create_all(engine)
 
-@st.cache_resource
-def load_pest_model():
-    from tensorflow.keras.applications import MobileNetV2
-    return MobileNetV2(weights="imagenet")
+Session = sessionmaker(bind=engine)
+db_session = Session()
 
-@st.cache_resource
-def load_openai_client():
+# ==============================
+# OPENAI SETUP
+# ==============================
+from openai import OpenAI
+client = OpenAI(api_key=st.secrets["crop"])
+
+# ==============================
+# GEMINI SETUP
+# ==============================
+import google.generativeai as genai
+genai.configure(api_key=st.secrets["yield_key"])
+gemini_model = genai.GenerativeModel("gemini-pro")
+
+# ==============================
+# LOAD OFFLINE MODEL
+# ==============================
+try:
+    offline_model = joblib.load("crop_model.pkl")
+except:
+    offline_model = None
+
+# ==============================
+# AUTH FUNCTIONS
+# ==============================
+def register(username, password):
+    user = User(username=username, password=password)
+    db_session.add(user)
+    db_session.commit()
+
+def login(username, password):
+    user = db_session.query(User).filter_by(username=username, password=password).first()
+    return user
+
+# ==============================
+# OFFLINE AI
+# ==============================
+def offline_response(prompt):
+    prompt = prompt.lower()
+
+    if "maize" in prompt:
+        return "🌽 Plant maize early with proper spacing (75cm x 25cm)."
+    elif "fertilizer" in prompt:
+        return "Use basal fertilizer during planting and top dress later."
+    elif offline_model:
+        try:
+            return str(offline_model.predict([prompt])[0])
+        except:
+            pass
+
+    return "Offline mode: Provide more details."
+
+# ==============================
+# OPENAI CHAT
+# ==============================
+def get_ai_response(prompt):
     try:
-        return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    except Exception as e:
-        st.error(f"OpenAI error: {e}")
-        return None
+        res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return res.choices[0].message.content
+    except:
+        return offline_response(prompt)
 
+# ==============================
+# GEMINI YIELD PREDICTION
+# ==============================
+def get_yield_prediction(data):
+    try:
+        prompt = f"Predict crop yield based on: {data}"
+        response = gemini_model.generate_content(prompt)
+        return response.text
+    except:
+        return "AI unavailable. Try again later."
 
-# --- Authentication Logic (Direct DB Interaction) ---
-if 'logged_in' not in st.session_state:
+# ==============================
+# STREAMLIT UI
+# ==============================
+st.set_page_config(layout="wide")
+
+# ==============================
+# AUTH UI
+# ==============================
+if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
-    st.session_state.username = None
 
-def login_form():
-    st.subheader("Login")
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
-
-        if submitted:
-            db = next(get_db())
-            user_data = db.query(DBUser).filter(DBUser.username == username).first()
-            db.close()
-            if user_data and verify_password(password, user_data.hashed_password):
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.success(f"Welcome, {username}!")
-                st.experimental_rerun()
-            else:
-                st.error("Incorrect username or password.")
-
-def register_form():
-    st.subheader("Register New User")
-    with st.form("register_form"):
-        new_username = st.text_input("New Username")
-        new_password = st.text_input("New Password", type="password")
-        confirm_password = st.text_input("Confirm Password", type="password")
-        submitted = st.form_submit_button("Register")
-
-        if submitted:
-            if new_password != confirm_password:
-                st.error("Passwords do not match.")
-            elif len(new_password) < 6:
-                st.error("Password must be at least 6 characters long.")
-            else:
-          
-                db_user = db.query(DBUser).filter(DBUser.username == new_username).first()
-                if db_user:
-                    st.error("Username already registered")
-                    db.close()
-                else:
-                    hashed_password = get_password_hash(new_password)
-                    new_db_user = DBUser(username=new_username, hashed_password=hashed_password)
-                    db.add(new_db_user)
-                    db.commit()
-                    db.refresh(new_db_user)
-                    db.close()
-                    st.success("Registration successful! Please login.")
-                    st.session_state.logged_in = False
-                    st.experimental_rerun()
+menu = ["Login", "Register"]
 
 if not st.session_state.logged_in:
-    st.sidebar.title("Authentication")
-    auth_option = st.sidebar.radio("", ["Login", "Register"])
-  # --- Main App Content (only shown if logged in) ---
-st.sidebar.write(f"Logged in as: {st.session_state.username}") # Role not strictly needed here
-if st.sidebar.button("Logout"):
-    st.session_state.logged_in = False
-      
+    choice = st.sidebar.selectbox("Menu", menu)
 
+    if choice == "Register":
+        st.subheader("Create Account")
+        user = st.text_input("Username")
+        pwd = st.text_input("Password", type="password")
 
-model = load_crop_yield_model()
+        if st.button("Register"):
+            register(user, pwd)
+            st.success("Account created!")
 
+    elif choice == "Login":
+        st.subheader("Login")
+        user = st.text_input("Username")
+        pwd = st.text_input("Password", type="password")
 
-# ---------------- FUNCTIONS ----------------
-def predict_yield(input_df):
-    if model is None:
-        return [np.random.uniform(1000, 5000)]
+        if st.button("Login"):
+            if login(user, pwd):
+                st.session_state.logged_in = True
+                st.success("Logged in!")
+                st.rerun()
+            else:
+                st.error("Invalid credentials")
 
-    cols = ['Area', 'Item', 'Year', 'rainfall', 'pesticides', 'temperature']
-    input_df = input_df[cols]
+# ==============================
+# MAIN APP
+# ==============================
+if st.session_state.logged_in:
 
-    pred = model.predict(input_df)
-    return np.expm1(pred)
+    st.title("🌾 AI Crop Advisory System")
 
+    tabs = st.tabs([
+        "🌽 Yield Prediction",
+        "🐛 Pest Detection",
+        "🤖 AI Advisor",
+        "📊 Market Trends"
+    ])
 
-def get_openai_response(prompt):
-    if openai_client is None:
-        return "⚠️ OpenAI not configured. Add your API key."
+    # ==========================
+    # TAB 1: YIELD
+    # ==========================
+    with tabs[0]:
+        st.header("Crop Yield Prediction")
 
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are an agricultural expert helping farmers in Zambia.
-                    Give simple, practical, and actionable farming advice."""
-                },
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content
+        crop = st.selectbox("Crop", ["Maize", "Wheat", "Soybeans"])
+        rainfall = st.number_input("Rainfall (mm)")
+        temp = st.number_input("Temperature (°C)")
 
-    except Exception as e:
-        return f"Error: {e}"
-
-
-# ---------------- UI ----------------
-st.set_page_config(page_title="Crop Advisory System", layout="wide")
-st.title("🌾 AI Crop Advisory & Yield Prediction System")
-
-tabs = st.tabs([
-    "📈 Yield Prediction",
-    "🐛 Pest Detection",
-    "🦾 AI Advisor",
-    "🛒Farmer Market & Trends"
-])
-
-# =======================
-# 📈 YIELD PREDICTION
-# =======================
-with tabs[0]:
-    st.header("Crop Yield Prediction")
-
-    with st.form("prediction_form"):
-        area = st.selectbox("Area", ["Zambia", "Zimbabwe"])
-        crop = st.selectbox("Crop", ["Wheat", "Maize", "Rice", "Sorghum", "Soybeans"])
-        year = st.number_input("Year", 2024, 2035, 2025)
-        rainfall = st.slider("Rainfall (mm)", 0, 3000, 1000)
-        pesticides = st.slider("Pesticides", 0, 10000, 2000)
-        temperature = st.slider("Temperature (°C)", 10, 40, 25)
-
-        submit = st.form_submit_button("Predict")
-
-        if submit:
-            data = pd.DataFrame([{
-                "Area": area,
-                "Item": crop,
-                "Year": year,
+        if st.button("Predict Yield"):
+            data = {
+                "crop": crop,
                 "rainfall": rainfall,
-                "pesticides": pesticides,
-                "temperature": temperature
-            }])
+                "temperature": temp
+            }
+            result = get_yield_prediction(data)
+            st.success(result)
 
-            prediction = predict_yield(data)
-            st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
+    # ==========================
+    # TAB 2: PEST DETECTION
+    # ==========================
+    with tabs[1]:
+        st.header("Pest Detection")
 
+        file = st.file_uploader("Upload crop image")
 
-# =======================
-# 🐛 PEST DETECTION
-# =======================
-with tabs[1]:
-    st.header("Pest Detection")
+        if file:
+            img = Image.open(file)
+            st.image(img, caption="Uploaded Image")
 
-    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png"])
+            st.info("Pest detection model can be integrated here.")
 
-    if uploaded_file:
-        st.image(uploaded_file)
+    # ==========================
+    # TAB 3: AI ADVISOR
+    # ==========================
+    with tabs[2]:
+        st.header("AI Crop Advisor")
 
-        
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
 
-        img = Image.open(uploaded_file).resize((224, 224))
-        
-        
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.write(msg["content"])
 
-        
+        prompt = st.chat_input("Ask about farming...")
 
-        st.subheader("Results:")
-        for R in "Results":
-            st.write("f{R[1]} ({R[2]:.2f})")
+        if prompt:
+            st.session_state.messages.append({"role": "user", "content": prompt})
 
+            with st.chat_message("user"):
+                st.write(prompt)
 
-# =======================
-# 🦾 AI ADVISOR (OPENAI)
-# =======================
-with tabs[2]:
-    st.header("AI Crop Advisor (Powered by OpenAI)")
+            response = get_ai_response(prompt)
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
-    # Display chat history
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
+            with st.chat_message("assistant"):
+                st.write(response)
 
-    # User input
-    if prompt := st.chat_input("Ask about crops, soil, pests..."):
-        st.session_state.messages.append({
-            "role": "user",
-            "content": prompt
-        })
-        st.chat_message("user").write(prompt)
+    # ==========================
+    # TAB 4: MARKET
+    # ==========================
+    with tabs[3]:
+        st.header("Market Trends")
 
-        with st.spinner("Thinking..."):
-            response = get_openai_response(prompt)
+        if os.path.exists("market_trends.csv"):
+            df = pd.read_csv("market_trends.csv")
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.warning("No market data available.")
 
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": response
-        })
-        st.chat_message("assistant").write(response) 
- # =======================
-# Farmer Market & Trending Crops
-# =======================
-with tabs[3]:
-    st.header("🛒 Farmer Marketplace & Trending Crops")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader('Trending Crops This Season')
-        if os.path.exists("market trends"):
-            df_trends = pd.read_csv("market trends")
-            st.dataframe(df_trends, use_container_width=True)
-        else: st.info('No trend data available.')
-    with col2:
-        st.subheader('List Your Crop for Sale')
-        with st.form('market_form'):
-            seller_name = st.text_input('Name','contact')
-            crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
-            quantity = st.number_input('Quantity (kg)', min_value=1)
-            price = st.number_input('Asking Price (ZMW)', min_value=1)
-            if st.form_submit_button('Post Listing'):
-                st.success(f'Listing created for {seller_name}.')
+    # ==========================
+    # LOGOUT
+    # ==========================
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
