@@ -233,7 +233,7 @@ with tabs[2]:
             response_text = "Error: AI provider not configured."
             if ai_provider == "Gemini":
                     response_text = asyncio.run(get_gemini_response(prompt, gemini_llm))
-                else:
+            
                     st.error("Gemini model not available. Please check API key configuration ('yield_key').")
                     response_text = "Error: Gemini model not available."
             if ai_provider == "OpenAI":
