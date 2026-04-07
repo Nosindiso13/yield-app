@@ -220,7 +220,10 @@ with tabs[2]:
         st.chat_message("user").write(prompt)
 
         with st.spinner("Thinking..."):
-            response = get_openai_response(prompt)
+            response = client.chat.completions.create(model="gpt-40-mini",
+                                                      messages=[
+                                                          {"role": "user". "content": prompt}
+                                                          )
 
         st.session_state.messages.append({
             "role": "assistant",
