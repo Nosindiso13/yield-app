@@ -13,18 +13,7 @@ from PIL import Image
 
 
 
-# ==============================
-# OPENAI SETUP
-# ==============================
-from openai import OpenAI
-client = OpenAI(api_key=st.secrets["crop"])
-
-# ==============================
-# GEMINI SETUP
-# ==============================
-import google.generativeai as genai
-genai.configure(api_key=st.secrets["yield_key"])
-gemini_model = genai.GenerativeModel("gemini-pro")
+#
 
 # ==============================
 # LOAD OFFLINE MODEL
