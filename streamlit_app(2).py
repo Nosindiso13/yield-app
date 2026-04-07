@@ -7,8 +7,8 @@ from PIL import Image
 import asyncio
 from datetime import datetime, timedelta
 #AI APIs
-from openai import OpenAI
-import google.generativeai as genai
+
+
 
 
 
