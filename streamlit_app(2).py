@@ -184,8 +184,7 @@ with tabs[1]:
     if uploaded_file:
         st.image(uploaded_file)
 
-        from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
-        from tensorflow.keras.preprocessing import image
+        
 
         img = Image.open(uploaded_file).resize((224, 224))
         x = image.img_to_array(img)
