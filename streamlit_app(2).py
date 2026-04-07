@@ -26,7 +26,7 @@ def load_pest_model():
 @st.cache_resource
 def load_openai_client():
     try:
-        return OpenAI(api_key=os.getenv("crop"))
+        return OpenAI(api_key=os.getenv("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"))
     except Exception as e:
         st.error(f"OpenAI error: {e}")
         return None
