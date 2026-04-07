@@ -239,7 +239,7 @@ with tabs[2]:
             if ai_provider == "OpenAI":
             
                     response_text = asyncio.run(get_openai_response(prompt, openai_client))
-                else:
+            
                     st.error("OpenAI client not available. Please set 'OPENAI_API_KEY' in Colab secrets.")
                     response_text = "Error: OpenAI client not available."
 
