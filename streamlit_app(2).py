@@ -13,7 +13,7 @@ MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
 @st.cache_resource
 def load_crop_yield_model():
     if not os.path.exists(MODEL_PATH):
-        st.warning("Model not found. Using demo prediction.")
+    
         return None
     return joblib.load(MODEL_PATH)
 
