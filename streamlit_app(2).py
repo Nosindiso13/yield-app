@@ -11,7 +11,6 @@ from PIL import Image
 # ==============================
 
 
-class User(Base):
     _tablename_ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True)
