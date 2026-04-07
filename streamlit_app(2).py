@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 import os
 import sqlite3
-from sqlalchemy import 'create_engine, Column, Integer, String'
-from sqlalchemy.orm import 'sessionmaker, declarative_base'
+from sqlalchemy import "create_engine, Column, Integer, String"
+from sqlalchemy.orm import "sessionmaker, declarative_base"
 from PIL import Image
 import joblib
 
