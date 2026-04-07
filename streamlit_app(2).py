@@ -2,9 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
-import sqlalchemy
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import sessionmaker, declarative_base
+import sqlite3
+
 from PIL import Image
 import joblib
 
