@@ -9,12 +9,7 @@ from PIL import Image
 # ==============================
 # DATABASE SETUP (SQLAlchemy)
 # ==============================
-
-
   
-    
-    username = Column(String, unique=True)
-    password = Column(String)
 
 Base.metadata.create_all(engine)
 
