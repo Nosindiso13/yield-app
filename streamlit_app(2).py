@@ -223,6 +223,7 @@ with tabs[2]:
             response = client.chat.completions.create(model="gpt-40-mini",
                                                       messages=[
                                                           {"role": "user". "content": prompt}
+                                                           ]
                                                           )
 
         st.session_state.messages.append({
