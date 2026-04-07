@@ -214,33 +214,41 @@ with tabs[1]:
 # 🦾 AI ADVISOR (OPENAI)
 # =======================
 with tabs[2]:
-    st.header("AI Crop Advisor (Powered by OpenAI)")
+    t.header('AI crop Advisor')
+    ai_provider = st.radio("Choose AI Provider:", ("Gemini", "OpenAI"), key="ai_provider_selector")
 
-    if "messages" not in st.session_state:
+    if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    # Display chat history
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
+    # Display messages from history
+    for m in st.session_state.messages:
+        with st.chat_message(m['role']):
+            st.markdown(m['content'])
 
-    # User input
-    if prompt := st.chat_input("Ask about crops, soil, pests..."):
-        st.session_state.messages.append({
-            "role": "user",
-            "content": prompt
-        })
-        st.chat_message("user").write(prompt)
+    if prompt := st.chat_input('How can I improve my soil?'):
+        st.session_state.messages.append({'role': 'user', 'content': prompt})
+        st.chat_message('user').write(prompt)
 
-        with st.spinner("Thinking..."):
-            response = client.chat.completions.create(model="gpt-4o-mini") 
+        with st.spinner("Getting advice from the AI..."):
+            response_text = "Error: AI provider not configured."
+            if ai_provider == "Gemini":
+                if gemini_llm:
+                    response_text = asyncio.run(get_gemini_response(prompt, gemini_llm))
+                else:
+                    st.error("Gemini model not available. Please check API key configuration ('yield_key').")
+                    response_text = "Error: Gemini model not available."
+            elif ai_provider == "OpenAI":
+                if openai_client:
+                    response_text = asyncio.run(get_openai_response(prompt, openai_client))
+                else:
+                    st.error("OpenAI client not available. Please set 'OPENAI_API_KEY' in Colab secrets.")
+                    response_text = "Error: OpenAI client not available."
+
+            st.session_state.messages.append({'role': 'assistant', 'content': response_text})
+    
                                             
-                                                          
-
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": response
-        })
-        st.chat_message("assistant").write(response) 
+                                                        
+        
  # =======================
 # Farmer Market & Trending Crops
 # =======================
