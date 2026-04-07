@@ -5,7 +5,6 @@ import os
 import sqlite3
 
 from PIL import Image
-import joblib
 
 # ==============================
 # DATABASE SETUP (SQLAlchemy)
