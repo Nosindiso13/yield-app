@@ -4,11 +4,18 @@ import numpy as np
 import os
 import io
 from PIL import Image
+import asyncio
+from datetime import datetime, timedelta
+#AI APIs
+from openai import OpenAI
+import google.generativeai as genai
 
 
 
 # ---------------- CONFIG ----------------
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
+OPENAI_API_KEY = st.secrets['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']
+
 
 # ---------------- LOAD MODELS ----------------
 @st.cache_resource
@@ -26,7 +33,7 @@ def load_pest_model():
 @st.cache_resource
 def load_openai_client():
     try:
-        return client= OpenAI(api_key=os.getenv("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"))
+        return  OpenAI(api_key=os.getenv("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"))
     except Exception as e:
         st.error(f"OpenAI error: {e}")
         return None
@@ -130,7 +137,7 @@ def get_openai_response(prompt):
         return response.choices[0].message.content
 
     except Exception as e:
-        return f"Error: {e}"
+        return get_openai_response(prompt)
 
 
 # ---------------- UI ----------------
