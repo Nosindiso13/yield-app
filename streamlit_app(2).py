@@ -244,7 +244,7 @@ with tabs[3]:
         with st.form('market_form'):
             seller_name = st.text_input('Name','contact')
             crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
-            quantity = st.number_input('Quantity (kg)', min_value=1)
-price = st.number_input('Asking Price (ZMW)', min_value=1)
+            quantity = st.number_input('Quantity (kg)', min_value=1
+        price = st.number_input('Asking Price (ZMW)', min_value=1)
             if st.form_submit_button("Post Listing"):
-                st.success(f'Listing created for {seller_name}.')
+            st.success(f'Listing created for {seller_name}.')
