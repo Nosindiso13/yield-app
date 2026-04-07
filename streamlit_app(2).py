@@ -190,7 +190,6 @@ with tabs[1]:
         
         
 
-        preds = pest_model.predict(x)
         results = decode_predictions(preds, top=3)[0]
 
         st.subheader("Results:")
