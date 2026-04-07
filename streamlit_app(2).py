@@ -11,8 +11,8 @@ from PIL import Image
 # ==============================
 
 
-    _tablename_ = "users"
-    id = Column(Integer, primary_key=True)
+  
+    
     username = Column(String, unique=True)
     password = Column(String)
 
