@@ -237,8 +237,8 @@ with tabs[3]:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader('Trending Crops This Season')
-        if os.path.exists(market trends):
-            df_trends = pd.read_csv(market trends)
+        if os.path.exists("market trends"):
+            df_trends = pd.read_csv("market trends")
             st.dataframe(df_trends, use_container_width=True)
         else: st.info('No trend data available.')
     with col2:
