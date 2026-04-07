@@ -190,7 +190,7 @@ with tabs[1]:
         
         
 
-        results = decode_predictions(preds, top=3)[0]
+        
 
         st.subheader("Results:")
         for r in results:
