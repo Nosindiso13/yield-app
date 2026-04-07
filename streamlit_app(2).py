@@ -227,7 +227,7 @@ with tabs[2]:
         st.chat_message("user").write(prompt)
 
         with st.spinner("Thinking..."):
-            response = client.chat.completions.create(model="gpt-40-mini") 
+            response = client.chat.completions.create(model="gpt-4o-mini") 
                                             
                                                           
 
