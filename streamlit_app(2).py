@@ -11,10 +11,7 @@ from PIL import Image
 # ==============================
   
 
-Base.metadata.create_all(engine)
 
-Session = sessionmaker(bind=engine)
-db_session = Session()
 
 # ==============================
 # OPENAI SETUP
