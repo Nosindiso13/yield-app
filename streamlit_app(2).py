@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 # ---------------- CONFIG ----------------
 MODEL_PATH = 'model_artifacts/xgboost_pipeline.joblib'
-OPENAI_API_KEY = st.secrets['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']
+OPENAI_API_KEY = st.secrets["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"]
 
 
 # ---------------- LOAD MODELS ----------------
