@@ -214,7 +214,7 @@ with tabs[1]:
 # 🦾 AI ADVISOR (OPENAI)
 # =======================
 with tabs[2]:
-    t.header('AI crop Advisor')
+    st.header('AI crop Advisor')
     ai_provider = st.radio("Choose AI Provider:", ("Gemini", "OpenAI"), key="ai_provider_selector")
 
     if 'messages' not in st.session_state:
