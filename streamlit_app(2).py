@@ -33,9 +33,14 @@ def load_pest_model():
 @st.cache_resource
 def load_openai_client():
     try:
-        client = OpenAI(api_key=os.getenv("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"))
+        api_key = userdata.get("crops") # Assuming a secret named 'OPENAI_API_KEY'
+        if not api_key:
+            st.warning("OpenAI API Key not found. Please set 'OPENAI_API_KEY' in Colab secrets to use OpenAI chat.")
+            return None
+        client = openai.OpenAI(api_key="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")
+        return client
     except Exception as e:
-        st.error(f"OpenAI error: {e}")
+        st.error(f"Error initializing OpenAI client: {e}")
         return None
 
 
