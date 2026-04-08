@@ -238,7 +238,7 @@ with tabs[2]:
                     response_text = "Error: Gemini model not available."
             if ai_provider == "OpenAI":
                response_text = asyncio.run(get_openai_response(prompt, openai_client))
-            
+            else
                     st.error("OpenAI client not available.")
                     response_text = "Error: OpenAI client not available."
 
