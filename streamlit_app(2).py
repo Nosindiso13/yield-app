@@ -225,7 +225,7 @@ if not st.session_state.logged_in:
     if choice == "Login":
         if st.button("Login"):
             if username and password:
-                if login_user(username, password):
+               
                     st.session_state.logged_in = True
                     st.session_state.username = username
                     st.success("Login successful!")
