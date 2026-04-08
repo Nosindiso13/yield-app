@@ -113,7 +113,8 @@ else:
         "🌾 Yield Prediction",
         "🐛 Pest Detection",
         "🤖 AI Advisor",
-        "📊 Market Info"
+        "📊 Tranding crops",
+       "Market Place"
     ])
 
     # ==============================
@@ -180,10 +181,10 @@ with tabs[0]:
                 st.write(response)
 
     # ==============================
-    # TAB 4: MARKET
+    # TAB 4: Trending Crops
     # ==============================
     with tabs[3]:
-        st.header("Market Information")
+        st.header("Trending Crops")
 
         data = {
             "Crop": ["Maize", "Wheat", "Soybeans"],
@@ -196,7 +197,7 @@ with tabs[0]:
   # ==============================
   #  TAB 5: Farmer Market 
   # =======================
-with tabs[4]:
+  with tabs[4]:
     st.header("🛒 Farmer Marketplace")
     col1, col2 = st.columns(2)
     with col1:
