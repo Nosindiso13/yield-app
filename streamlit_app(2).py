@@ -114,7 +114,7 @@ else:
         "🐛 Pest Detection",
         "🤖 AI Advisor",
         "📊 Tranding crops",
-       "Market Place"
+        "🛒 Market Place"
     ])
 
     # ==============================
