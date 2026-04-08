@@ -9,9 +9,6 @@ from PIL import Image
 # 🔐 OPENAI CLIENT (FIXED)
 # ==============================
 
-
-openai_client = OpenAI(api_key=st.secrets.get("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"," None"))
-
 # ==============================
 # DATABASE SETUP
 # ==============================
