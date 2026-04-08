@@ -206,9 +206,9 @@ with tabs[0]:
        quantity = st.number_input('Quantity (kg)', min_value=1)
        price = st.number_input('Asking Price (ZMW)', min_value=50)
        if st.form_submit_button('Post Listing'):
-       st.success(f"Listing created for {seller_name}.")
+          st.success(f"Listing created for {seller_name}.")
 
     # LOGOUT
     if st.button("Logout"):
-        st.session_state.logged_in = False
+       st.session_state.logged_in = False
         st.rerun()
