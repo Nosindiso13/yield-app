@@ -119,21 +119,35 @@ else:
     # ==============================
     # TAB 1: YIELD
     # ==============================
-    with tabs[0]:
-        st.header("Crop Yield Prediction")
+   # =======================
+# 📈 YIELD PREDICTION
+# =======================
+with tabs[0]:
+    st.header("Crop Yield Prediction")
 
-        rainfall = st.number_input("Rainfall (mm)", 0.0)
-        temperature = st.number_input("Temperature (°C)", 0.0)
-        soil_quality = st.slider("Soil Quality", 1, 10)
+    with st.form("prediction_form"):
+        area = st.selectbox("Area", ["Zambia", "Zimbabwe"])
+        crop = st.selectbox("Crop", ["Wheat", "Maize", "Rice", "Sorghum", "Soybeans"])
+        year = st.number_input("Year", 2024, 2035, 2025)
+        rainfall = st.slider("Rainfall (mm)", 0, 3000, 1000)
+        pesticides = st.slider("Pesticides", 0, 10000, 2000)
+        temperature = st.slider("Temperature (°C)", 10, 40, 25)
 
-        if st.button("Predict Yield"):
-            if model:
-                input_data = np.array([[rainfall, temperature, soil_quality]])
-                prediction = model.predict(input_data)
-                st.success(f"Predicted Yield: {prediction[0]:.2f}")
-            else:
-                st.warning("⚠️ Model not found. Using dummy prediction.")
-                st.info(f"Estimated Yield: {rainfall * 0.3 + temperature * 0.5}")
+        submit = st.form_submit_button("Predict")
+
+        if submit:
+            data = pd.DataFrame([{
+                "Area": area,
+                "Item": crop,
+                "Year": year,
+                "rainfall": rainfall,
+                "pesticides": pesticides,
+                "temperature": temperature
+            }])
+
+            prediction = predict_yield(data)
+            st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
+
 
     # ==============================
     # TAB 2: PEST DETECTION
@@ -176,6 +190,28 @@ else:
 
         df = pd.DataFrame(data)
         st.table(df)
+
+  # ==============================
+  #  TAB 5: Farmer Market 
+  # =======================
+with tabs[4]:
+    st.header("🛒 Farmer Marketplace")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader('Trending Crops This Season')
+        if os.path.exists("market trends"):
+            df_trends = pd.read_csv("market trends")
+            st.dataframe(df_trends, use_container_width=True)
+        else: st.info('No trend data available.')
+    with col2:
+        st.subheader('List Your Crop for Sale')
+        with st.form('market_form'):
+            seller_name = st.text_input('Name','contact')
+            crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
+            quantity = st.number_input('Quantity (kg)', min_value=1)
+            price = st.number_input('Asking Price (ZMW)', min_value=50)
+            if st.form_submit_button('Post Listing'):
+                st.success(f'Listing created for {seller_name}.')
 
     # LOGOUT
     if st.button("Logout"):
