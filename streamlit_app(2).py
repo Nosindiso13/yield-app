@@ -20,7 +20,7 @@ DATABASE_URL = "sqlite:///users.db"
 # AUTH FUNCTIONS
 # ==============================
 def register_user(username, password):
-    db = SessionLocal()
+   
     hashed_password = bcrypt.hash(password)
     user = User(username=username, password=hashed_password)
     db.add(user)
@@ -91,7 +91,7 @@ if not st.session_state.logged_in:
 
     if choice == "Register":
         if st.button("Register"):
-            register_user(username, password):
+            
             st.success("User registered! Please login.")
 
     if choice == "Login":
