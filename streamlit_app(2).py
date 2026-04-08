@@ -147,7 +147,7 @@ with tabs[0]:
             }])
 
     prediction = predict_yield(data)
-                st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
+                 st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
 
 
                 
