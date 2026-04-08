@@ -25,8 +25,7 @@ MODEL = "mistralai/mistral-7b-instruct"  # Free model on OpenRouter
 # ==============================
 # DATABASE SETUP (SQLite + SQLAlchemy)
 # ==============================
-from sqlalchemy import create_engine, Column, String, Integer
-from sqlalchemy.orm import declarative_base, sessionmaker
+
 import bcrypt
 import joblib
 
