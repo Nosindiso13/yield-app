@@ -31,9 +31,7 @@ DATABASE_URL = "sqlite:///users.db"
                
 
     
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password = Column(String)
+   
 
 Base.metadata.create_all(bind=engine)
 
