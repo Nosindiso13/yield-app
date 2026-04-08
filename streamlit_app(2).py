@@ -230,8 +230,7 @@ if not st.session_state.logged_in:
                     st.session_state.username = username
                     st.success("Login successful!")
                     st.rerun()
-                else:
-                    st.error("Invalid credentials")
+               
             else:
                 st.warning("Please fill in all fields.")
 
