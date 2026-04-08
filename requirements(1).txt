@@ -5,10 +5,8 @@ requests
 scikit-learn
 xgboost
 Pillow
-google-generativeai
 SQLAlchemy
 passlib[bycrpyt]
 passlib.context==1.7.4
 python-jose[cryptography]
 tensorflow
-openai=1.0.0
