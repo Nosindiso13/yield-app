@@ -2,41 +2,80 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
+import requests
+import json
 from PIL import Image
 
+# ==============================
+# 🔐 SECURE API KEY SETUP
+# ==============================
+# API key is loaded from Streamlit secrets (st.secrets) OR environment variable.
+# NEVER hardcode your key here. See README_SECRETS.md for setup instructions.
+
+def get_openrouter_key():
+    try:
+        return st.secrets["OPENROUTER_API_KEY"]
+    except Exception:
+        return os.environ.get("OPENROUTER_API_KEY", None)
+
+OPENROUTER_API_KEY = get_openrouter_key()
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "mistralai/mistral-7b-instruct"  # Free model on OpenRouter
 
 # ==============================
-# 🔐 OPENAI CLIENT (FIXED)
+# DATABASE SETUP (SQLite + SQLAlchemy)
 # ==============================
+from sqlalchemy import create_engine, Column, String, Integer
+from sqlalchemy.orm import declarative_base, sessionmaker
+import bcrypt
+import joblib
 
-# ==============================
-# DATABASE SETUP
-# ==============================
 DATABASE_URL = "sqlite:///users.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+Base = declarative_base()
+SessionLocal = sessionmaker(bind=engine)
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    password = Column(String)
 
+Base.metadata.create_all(bind=engine)
 
 # ==============================
-# AUTH FUNCTIONS
+# AUTH FUNCTIONS (FIXED)
 # ==============================
 def register_user(username, password):
-   
-    hashed_password = bcrypt.hash(password)
-    user = User(username=username, password=hashed_password)
-    db.add(user)
-    db.commit()
-    db.close()
+    db = SessionLocal()
+    try:
+        existing = db.query(User).filter(User.username == username).first()
+        if existing:
+            return False, "Username already exists."
+        hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        user = User(username=username, password=hashed_password)
+        db.add(user)
+        db.commit()
+        return True, "Registered successfully!"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        db.close()
 
 def login_user(username, password):
-    
-    user = db.query(User).filter(User.username == username).first()
-    db.close()
-    if user and bcrypt.verify(password, user.password):
-        return True
-    return False
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user and bcrypt.checkpw(password.encode(), user.password.encode()):
+            return True
+        return False
+    except Exception:
+        return False
+    finally:
+        db.close()
 
 # ==============================
-# LOAD MODEL (YIELD)
+# LOAD YIELD MODEL (SAFE)
 # ==============================
 MODEL_PATH = "model_artifacts/xgboost_pipeline.joblib"
 
@@ -48,96 +87,203 @@ def load_model():
 
 model = load_model()
 
-# ==============================
-# AI RESPONSE FUNCTION
-# ==============================
-def get_ai_response(prompt):
-    try:
-        if openai_client is None:
-            return "⚠️ OpenAI not configured."
+def predict_yield(data: pd.DataFrame):
+    if model is not None:
+        return model.predict(data)
+    # Demo fallback: simple heuristic
+    base = {"Maize": 3500, "Wheat": 2800, "Rice": 4200, "Sorghum": 2100, "Soybeans": 1900}
+    crop = data["Item"].iloc[0]
+    rainfall_factor = data["rainfall"].iloc[0] / 1000
+    temp_factor = 1 - abs(data["temperature"].iloc[0] - 25) / 50
+    return [base.get(crop, 3000) * rainfall_factor * temp_factor]
 
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are an agricultural expert."},
-                {"role": "user", "content": prompt}
-            ]
+# ==============================
+# 🤖 AI AGENT via OpenRouter (FIXED & ENHANCED)
+# ==============================
+def call_openrouter(system_prompt: str, user_prompt: str) -> str:
+    if not OPENROUTER_API_KEY:
+        return (
+            "⚠️ OpenRouter API key not configured.\n\n"
+            "**Setup:** Add your key to `.streamlit/secrets.toml`:\n"
+            "```\nOPENROUTER_API_KEY = 'your-key-here'\n```\n"
+            "Get a free key at https://openrouter.ai"
         )
-        return response.choices[0].message.content
-
+    try:
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ai-crop-advisory.streamlit.app",
+            "X-Title": "AI Crop Advisory System"
+        }
+        payload = {
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "max_tokens": 800
+        }
+        resp = requests.post(OPENROUTER_BASE_URL, headers=headers, json=payload, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
+    except requests.exceptions.Timeout:
+        return "⚠️ Request timed out. Please try again."
+    except requests.exceptions.HTTPError as e:
+        return f"⚠️ API error: {e.response.status_code} — {e.response.text}"
     except Exception as e:
-        # 🔁 OFFLINE FALLBACK
-        return f"⚠️ AI unavailable. Basic advice: Ensure proper irrigation, pest control, and soil fertility.\n\nError: {str(e)}"
+        return f"⚠️ Unexpected error: {str(e)}"
+
+def agent_yield_advice(crop, area, rainfall, temperature, pesticides, predicted_yield):
+    system = (
+        "You are an expert agricultural advisor for sub-Saharan Africa. "
+        "Give practical, actionable advice. Be concise and clear."
+    )
+    prompt = (
+        f"Crop: {crop}, Region: {area}, Rainfall: {rainfall}mm, "
+        f"Temp: {temperature}°C, Pesticides used: {pesticides}g/ha, "
+        f"Predicted yield: {predicted_yield:,.0f} hg/ha. "
+        "Give 3 specific tips to improve this yield."
+    )
+    return call_openrouter(system, prompt)
+
+def agent_pest_detection(crop, symptoms):
+    system = (
+        "You are a plant pathologist specializing in African agriculture. "
+        "Identify likely pests/diseases and give treatment advice."
+    )
+    prompt = f"Crop: {crop}. Observed symptoms: {symptoms}. What pests or diseases are likely? How should the farmer treat them?"
+    return call_openrouter(system, prompt)
+
+def agent_trending_crops(region, season):
+    system = (
+        "You are an agricultural market analyst for southern Africa. "
+        "Give practical market trend advice for smallholder farmers."
+    )
+    prompt = f"Region: {region}, Season: {season}. Which 3 crops are most profitable right now and why? Include price trends."
+    return call_openrouter(system, prompt)
+
+def agent_market_advisor(crop, quantity, region):
+    system = (
+        "You are a farmers market expert helping smallholder farmers in southern Africa "
+        "find the best channels to sell their produce."
+    )
+    prompt = (
+        f"Farmer has {quantity} kg of {crop} in {region}. "
+        "Suggest the best markets, buyers, or cooperatives to contact. "
+        "Include tips on pricing and negotiation."
+    )
+    return call_openrouter(system, prompt)
+
+def agent_general_advisor(question):
+    system = (
+        "You are a knowledgeable agricultural advisor for African smallholder farmers. "
+        "Answer questions about crops, soil, water, pests, and farming practices. "
+        "Be practical, friendly, and specific to the southern Africa context."
+    )
+    return call_openrouter(system, question)
 
 # ==============================
-# UI START
+# UI SETUP
 # ==============================
-st.set_page_config(page_title="AI Crop Advisory System", layout="wide")
+st.set_page_config(page_title="AI Crop Advisory System", layout="wide", page_icon="🌱")
+
+st.markdown("""
+<style>
+    .stTabs [data-baseweb="tab"] { font-size: 15px; font-weight: 600; }
+    .metric-card {
+        background: linear-gradient(135deg, #1a4a2e, #2d7a4f);
+        border-radius: 12px; padding: 20px; color: white; text-align: center;
+    }
+    .ai-response {
+        background: #f0faf4; border-left: 4px solid #2d7a4f;
+        padding: 16px; border-radius: 8px; margin-top: 12px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # SESSION STATE
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
 
 # ==============================
-# LOGIN / REGISTER
+# LOGIN / REGISTER (FIXED)
 # ==============================
 if not st.session_state.logged_in:
-    st.title("🔐 Login / Register")
+    st.title("🌱 AI Crop Advisory System")
+    st.subheader("🔐 Login / Register")
 
     choice = st.radio("Select Option", ["Login", "Register"])
-
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
     if choice == "Register":
         if st.button("Register"):
-            
-            st.success("User registered! Please login.")
+            if username and password:
+                success, msg = register_user(username, password)
+                if success:
+                    st.success(msg + " Please login.")
+                else:
+                    st.error(msg)
+            else:
+                st.warning("Please fill in all fields.")
 
     if choice == "Login":
         if st.button("Login"):
-            
-                st.session_state.logged_in = True
-                st.success("Login successful!")
-                st.rerun()
-         
-                st.error("Invalid credentials")
+            if username and password:
+                if login_user(username, password):
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.success("Login successful!")
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials")
+            else:
+                st.warning("Please fill in all fields.")
 
 # ==============================
-# MAIN APP
+# MAIN APP (FIXED INDENTATION + STRUCTURE)
 # ==============================
 else:
-    st.title("🌱 AI Crop Advisory System")
+    col1, col2 = st.columns([6, 1])
+    with col1:
+        st.title(f"🌱 AI Crop Advisory — Welcome, {st.session_state.username}!")
+    with col2:
+        if st.button("🚪 Logout"):
+            st.session_state.logged_in = False
+            st.rerun()
 
     tabs = st.tabs([
         "🌾 Yield Prediction",
         "🐛 Pest Detection",
         "🤖 AI Advisor",
-        "📊 Tranding crops",
-        "🛒 Market Place"
+        "📊 Trending Crops",
+        "🛒 Farmers Market"
     ])
 
-    # ==============================
-    # TAB 1: YIELD
-    # ==============================
-   # =======================
-# 📈 YIELD PREDICTION
-# =======================
-with tabs[0]:
-    st.header("Crop Yield Prediction")
+    # ==========================
+    # TAB 1: YIELD PREDICTION (FIXED)
+    # ==========================
+    with tabs[0]:
+        st.header("🌾 Crop Yield Prediction")
 
-    with st.form("prediction_form"):
-        area = st.selectbox("Area", ["Zambia", "Zimbabwe"])
-        crop = st.selectbox("Crop", ["Wheat", "Maize", "Rice", "Sorghum", "Soybeans"])
-        year = st.number_input("Year", 2024, 2035, 2025)
-        rainfall = st.slider("Rainfall (mm)", 0, 3000, 1000)
-        pesticides = st.slider("Pesticides", 0, 10000, 2000)
-        temperature = st.slider("Temperature (°C)", 10, 40, 25)
+        with st.form("prediction_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                area = st.selectbox("Area", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
+                crop = st.selectbox("Crop", ["Maize", "Wheat", "Rice", "Sorghum", "Soybeans"])
+                year = st.number_input("Year", 2024, 2035, 2025)
+            with col2:
+                rainfall = st.slider("Rainfall (mm)", 0, 3000, 1000)
+                pesticides = st.slider("Pesticides (g/ha)", 0, 10000, 2000)
+                temperature = st.slider("Temperature (°C)", 10, 40, 25)
 
-        submit = st.form_submit_button("Predict")
+            submit = st.form_submit_button("🔮 Predict Yield")
 
         if submit:
-            data = pd.DataFrame([{
+            input_data = pd.DataFrame([{
                 "Area": area,
                 "Item": crop,
                 "Year": year,
@@ -146,58 +292,124 @@ with tabs[0]:
                 "temperature": temperature
             }])
 
-    prediction = predict_yield(data)
-   st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
+            prediction = predict_yield(input_data)
+            pred_val = prediction[0]
 
+            col1, col2, col3 = st.columns(3)
+            col1.metric("🌾 Estimated Yield", f"{pred_val:,.0f} hg/ha")
+            col2.metric("📍 Region", area)
+            col3.metric("🌡️ Temperature", f"{temperature}°C")
 
-                
+            st.success(f"Estimated Yield for {crop} in {area}: **{pred_val:,.2f} hg/ha**")
 
+            with st.spinner("🤖 Getting AI improvement tips..."):
+                advice = agent_yield_advice(crop, area, rainfall, temperature, pesticides, pred_val)
+            st.markdown("### 💡 AI Yield Improvement Tips")
+            st.markdown(f'<div class="ai-response">{advice}</div>', unsafe_allow_html=True)
 
-    # ==============================
-    # TAB 2: PEST DETECTION
-    # ==============================
+    # ==========================
+    # TAB 2: PEST DETECTION (ENHANCED)
+    # ==========================
     with tabs[1]:
-        st.header("Pest Detection")
+        st.header("🐛 Pest Detection")
 
-        uploaded_file = st.file_uploader("Upload crop image", type=["jpg", "png"])
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            uploaded_file = st.file_uploader("Upload crop image (optional)", type=["jpg", "jpeg", "png"])
+            if uploaded_file:
+                image = Image.open(uploaded_file)
+                st.image(image, caption="Uploaded Crop Image", use_container_width=True)
 
-        if uploaded_file:
-            image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Image")
+        with col2:
+            crop_type = st.selectbox("Crop Type", ["Maize", "Wheat", "Rice", "Sorghum", "Soybeans", "Other"])
+            symptoms = st.text_area(
+                "Describe what you observe",
+                placeholder="e.g. yellowing leaves, white spots on stems, holes in leaves, wilting..."
+            )
+            if st.button("🔍 Detect Pests & Diseases"):
+                if symptoms:
+                    with st.spinner("🤖 Analyzing symptoms..."):
+                        result = agent_pest_detection(crop_type, symptoms)
+                    st.markdown("### 🦠 AI Pest & Disease Analysis")
+                    st.markdown(f'<div class="ai-response">{result}</div>', unsafe_allow_html=True)
+                else:
+                    st.warning("Please describe the symptoms you observe.")
 
-            st.info("🔍 Analyzing image...")
-            st.success("No major pest detected (demo result)")
-
-    # ==============================
-    # TAB 3: AI ADVISOR
-    # ==============================
+    # ==========================
+    # TAB 3: AI ADVISOR (ENHANCED)
+    # ==========================
     with tabs[2]:
-        st.header("AI Crop Advisor")
+        st.header("🤖 AI Crop Advisor")
+        st.markdown("Ask anything about farming — soil, irrigation, planting, harvesting, and more.")
 
-        user_input = st.text_area("Ask anything about crops")
+        user_input = st.text_area("Your question", placeholder="e.g. When is the best time to plant maize in Zambia?")
 
-        if st.button("Get Advice"):
+        if st.button("💬 Get Advice"):
             if user_input:
-                response = get_ai_response(user_input)
-                st.write(response)
+                with st.spinner("🤖 Thinking..."):
+                    response = agent_general_advisor(user_input)
+                st.markdown("### 🌿 AI Response")
+                st.markdown(f'<div class="ai-response">{response}</div>', unsafe_allow_html=True)
+            else:
+                st.warning("Please enter a question.")
 
-    # ==============================
-    # TAB 4: Trending Crops
-    # ==============================
+    # ==========================
+    # TAB 4: TRENDING CROPS (ENHANCED)
+    # ==========================
     with tabs[3]:
-        st.header("Trending Crops")
+        st.header("📊 Trending Crops & Market Prices")
 
-        data = {
-            "Crop": ["Maize", "Wheat", "Soybeans"],
-            "Price (ZMW)": [250, 300, 400]
+        col1, col2 = st.columns(2)
+        with col1:
+            trend_region = st.selectbox("Your Region", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
+        with col2:
+            season = st.selectbox("Season", ["Rainy Season (Oct–Apr)", "Dry Season (May–Sep)", "Post-Harvest"])
+
+        # Static price table
+        price_data = {
+            "Crop": ["Maize", "Wheat", "Soybeans", "Rice", "Sorghum", "Groundnuts", "Sunflower"],
+            "Price (ZMW/50kg)": [250, 300, 400, 350, 200, 450, 280],
+            "Demand": ["🔥 High", "📈 Rising", "🔥 High", "📈 Rising", "➡️ Stable", "🔥 High", "📈 Rising"],
+            "Best Market": ["ZAMACE", "FRA", "Export", "Local", "Local", "Export", "Crushing Plants"]
         }
+        df = pd.DataFrame(price_data)
+        st.dataframe(df, use_container_width=True)
 
-        df = pd.DataFrame(data)
-        st.table(df)
+        if st.button("🤖 Get AI Market Trend Analysis"):
+            with st.spinner("🤖 Analyzing market trends..."):
+                trend_advice = agent_trending_crops(trend_region, season)
+            st.markdown("### 📈 AI Market Trend Insights")
+            st.markdown(f'<div class="ai-response">{trend_advice}</div>', unsafe_allow_html=True)
 
-   
+    # ==========================
+    # TAB 5: FARMERS MARKET (NEW)
+    # ==========================
+    with tabs[4]:
+        st.header("🛒 Farmers Market — Sell Your Crops")
+        st.markdown("Get AI-powered advice on where and how to sell your harvest.")
 
-    # LOGOUT
-    if st.button("Logout"):
-       st.session_state.logged_in = False
-       st.rerun()
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            market_crop = st.selectbox("What crop do you want to sell?",
+                ["Maize", "Wheat", "Soybeans", "Rice", "Sorghum", "Groundnuts", "Sunflower", "Other"])
+        with col2:
+            quantity = st.number_input("Quantity available (kg)", min_value=1, value=500)
+        with col3:
+            market_region = st.selectbox("Your location",
+                ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
+
+        if st.button("🛒 Find Best Markets"):
+            with st.spinner("🤖 Finding best markets for you..."):
+                market_advice = agent_market_advisor(market_crop, quantity, market_region)
+            st.markdown("### 🏪 AI Market Recommendations")
+            st.markdown(f'<div class="ai-response">{market_advice}</div>', unsafe_allow_html=True)
+
+        st.divider()
+        st.markdown("### 📋 Known Markets & Buyers")
+        markets_df = pd.DataFrame({
+            "Market / Buyer": ["ZAMACE (Zambia Commodity Exchange)", "FRA (Food Reserve Agency)",
+                               "Export traders (ZIM)", "Local millers", "Cooperatives"],
+            "Best For": ["Maize, Soybeans", "Maize, Wheat", "Soybeans, Wheat", "Maize, Wheat", "All crops"],
+            "Contact": ["www.zamace.co.zm", "FRA District Office", "AgriTraders ZW", "Local listings", "District Cooperative"]
+        })
+        st.dataframe(markets_df, use_container_width=True)
