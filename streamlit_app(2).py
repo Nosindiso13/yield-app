@@ -238,8 +238,7 @@ with tabs[2]:
                     st.error("Gemini model not available. Please check API key configuration ('yield_key').")
                     response_text = "Error: Gemini model not available."
             if ai_provider == "OpenAI":
-            
-                    response_text = asyncio.run(get_openai_response(prompt, openai_client))
+               response_text = asyncio.run(get_openai_response(prompt, openai_client))
             
                     st.error("OpenAI client not available. Please set 'OPENAI_API_KEY' in Colab secrets.")
                     response_text = "Error: OpenAI client not available."
