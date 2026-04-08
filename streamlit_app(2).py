@@ -91,7 +91,7 @@ if not st.session_state.logged_in:
 
     if choice == "Register":
         if st.button("Register"):
-            register_user(username, password)
+            register_user(username, password):
             st.success("User registered! Please login.")
 
     if choice == "Login":
