@@ -146,8 +146,8 @@ with tabs[0]:
                 "temperature": temperature
             }])
 
-        prediction = predict_yield(data)
-               st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
+       prediction = predict_yield(data)
+                st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
 
 
                 
