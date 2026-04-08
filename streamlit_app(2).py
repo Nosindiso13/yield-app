@@ -239,7 +239,7 @@ with tabs[2]:
             if ai_provider == "OpenAI":
                
                                            
-            else:
+            
                     st.error("OpenAI client not available.")
                     response_text = "Error: OpenAI client not available."
 
