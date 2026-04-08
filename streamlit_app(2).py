@@ -14,8 +14,7 @@ from PIL import Image
 # ==============================
 DATABASE_URL = "sqlite:///users.db"
 
-    
-Base.metadata.create_all(bind=engine)
+
 
 # ==============================
 # AUTH FUNCTIONS
