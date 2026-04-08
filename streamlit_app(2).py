@@ -200,7 +200,7 @@ with tabs[0]:
     with tabs[4]:
        st.header("🛒 Farmer Marketplace")
       
-        with st.form('market_form'):
+    with st.form('market_form'):
             seller_name = st.text_input('Name','contact')
             crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
             quantity = st.number_input('Quantity (kg)', min_value=1)
