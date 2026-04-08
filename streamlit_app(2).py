@@ -147,7 +147,7 @@ with tabs[0]:
                 "temperature": temperature
             }])
 
-          prediction = predict_yield(input_data)
+      
                 st.success(f"Predicted Yield: {prediction[0]:.2f}")
             else:
                 st.warning("⚠️ Model not found. Using dummy prediction.")
