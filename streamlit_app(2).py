@@ -202,12 +202,13 @@ with tabs[0]:
       
     col1, col2 = st.columns(2)
    
-    with col1 st.subheader('Trending Crops This Season')
+     with st.subheader('Trending Crops This Season')
         if os.path.exists("market trends"):
             df_trends = pd.read_csv("market trends")
             st.dataframe(df_trends, use_container_width=True)
         else: st.info('No trend data available.')
-    with  col2 st.subheader('List Your Crop for Sale')
+    
+       with st.subheader('List Your Crop for Sale')
         with st.form('market_form'):
             seller_name = st.text_input('Name','contact')
             crop_type = st.selectbox('Crop', ['Wheat', 'Maize', 'Potatoes', 'Rice, paddy', 'Sorghum', 'Soybeans'])
