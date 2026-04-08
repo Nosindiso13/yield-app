@@ -96,9 +96,7 @@ def call_openrouter(system_prompt: str, user_prompt: str) -> str:
     if not OPENROUTER_API_KEY:
         return (
             "⚠️ OpenRouter API key not configured.\n\n"
-            "**Setup:** Add your key to `.streamlit/secrets.toml`:\n"
-            "```\nOPENROUTER_API_KEY = 'your-key-here'\n```\n"
-            "Get a free key at https://openrouter.ai"
+            
         )
     try:
         headers = {
