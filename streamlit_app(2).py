@@ -28,7 +28,7 @@ def register_user(username, password):
     db.close()
 
 def login_user(username, password):
-    db = SessionLocal()
+    
     user = db.query(User).filter(User.username == username).first()
     db.close()
     if user and bcrypt.verify(password, user.password):
@@ -96,7 +96,7 @@ if not st.session_state.logged_in:
 
     if choice == "Login":
         if st.button("Login"):
-            if login_user(username, password):
+            
                 st.session_state.logged_in = True
                 st.success("Login successful!")
                 st.rerun()
