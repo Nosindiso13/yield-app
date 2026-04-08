@@ -211,4 +211,4 @@ with tabs[0]:
     # LOGOUT
     if st.button("Logout"):
        st.session_state.logged_in = False
-        st.rerun()
+       st.rerun()
