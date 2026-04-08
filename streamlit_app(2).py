@@ -148,10 +148,7 @@ with tabs[0]:
             }])
 
       
-                st.success(f"Predicted Yield: {prediction[0]:.2f}")
-            else:
-                st.warning("⚠️ Model not found. Using dummy prediction.")
-                st.info(f"Estimated Yield: {rainfall * 0.3 + temperature * 0.5}")
+                
 
 
     # ==============================
