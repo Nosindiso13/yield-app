@@ -130,7 +130,6 @@ with tabs[0]:
         area = st.selectbox("Area", ["Zambia", "Zimbabwe"])
         crop = st.selectbox("Crop", ["Wheat", "Maize", "Rice", "Sorghum", "Soybeans"])
         year = st.number_input("Year", 2024, 2035, 2025)
-        soil_quality = st.slider("Soil Quality", 1, 10)
         rainfall = st.slider("Rainfall (mm)", 0, 3000, 1000)
         pesticides = st.slider("Pesticides", 0, 10000, 2000)
         temperature = st.slider("Temperature (°C)", 10, 40, 25)
@@ -141,14 +140,16 @@ with tabs[0]:
             data = pd.DataFrame([{
                 "Area": area,
                 "Item": crop,
-                "soil_quality": soil_quality,
                 "Year": year,
                 "rainfall": rainfall,
                 "pesticides": pesticides,
                 "temperature": temperature
             }])
 
-      
+      pprediction = predict_yield(data)
+            st.success(f"🌾 Estimated Yield: {prediction[0]:,.2f} hg/ha")
+
+
                 
 
 
