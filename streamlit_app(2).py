@@ -7,6 +7,7 @@ from PIL import Image
 import asyncio
 from datetime import datetime, timedelta
 #AI APIs
+client = OpenAI (api_key=os.get env( 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))
 
 
 
