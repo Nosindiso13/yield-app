@@ -14,7 +14,6 @@ from PIL import Image
 # ==============================
 DATABASE_URL = "sqlite:///users.db"
 
-engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
