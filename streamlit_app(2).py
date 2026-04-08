@@ -14,11 +14,7 @@ from PIL import Image
 # ==============================
 DATABASE_URL = "sqlite:///users.db"
 
-    _tablename_ = "users"
-    id = Column(Integer, primary_key=True)
-    username = Column(String, unique=True)
-    password = Column(String)
-
+    
 Base.metadata.create_all(bind=engine)
 
 # ==============================
