@@ -196,7 +196,7 @@ with tabs[0]:
 
   # ==============================
   #  TAB 5: Farmer Market 
-  # =======================
+  # ==============================
   with tabs[4]:
     st.header("🛒 Farmer Marketplace")
     col1, col2 = st.columns(2)
