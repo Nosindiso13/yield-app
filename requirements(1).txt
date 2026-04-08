@@ -7,7 +7,7 @@ xgboost
 Pillow
 google-generativeai
 sqlalchemy
-passlib
+passlib[bycrpyt]
 passlib.context==1.7.4
 python-jose[cryptography]
 tensorflow
