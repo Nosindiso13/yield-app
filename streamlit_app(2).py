@@ -13,10 +13,16 @@ from PIL import Image
 # NEVER hardcode your key here. See README_SECRETS.md for setup instructions.
 
 def get_openrouter_key():
-    try:
-        return st.secrets["OPENROUTER_API_KEY"]
-    except Exception:
-        return os.environ.get("OPENROUTER_API_KEY", None)
+    # Tries both secret names — use whichever you set in Streamlit Cloud
+    for name in ["Cropkey", "OPENROUTER_API_KEY"]:
+        try:
+            key = st.secrets[name]
+            if key:
+                return key
+        except Exception:
+            pass
+    # Fallback: environment variable (local dev)
+    return os.environ.get("Cropkey") or os.environ.get("OPENROUTER_API_KEY")
 
 OPENROUTER_API_KEY = get_openrouter_key()
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
