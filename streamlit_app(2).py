@@ -26,7 +26,7 @@ def get_openrouter_key():
 
 OPENROUTER_API_KEY = get_openrouter_key()
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "mistralai/mistral-7b-instruct"  # Free model on OpenRouter
+MODEL ="mistralai/mistral-7b-instruct:free"   # Free model on OpenRouter
 
 # ==============================
 # DATABASE SETUP (SQLite + SQLAlchemy)
