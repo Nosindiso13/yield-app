@@ -191,12 +191,12 @@ st.markdown("""
         border-radius: 12px; padding: 20px; color: white; text-align: center;
     }
     .ai-response {
-        background: #f0faf4; border-left: 4px solid #2d7a4f;
+        background: #2c1a0e; border-left: 4px solid #a0522d;
         padding: 16px; border-radius: 8px; margin-top: 12px;
+        color: #f5e6d3;
     }
 </style>
 """, unsafe_allow_html=True)
-
 # SESSION STATE
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
