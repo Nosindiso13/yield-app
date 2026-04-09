@@ -14,9 +14,9 @@ from PIL import Image
 
 def get_openrouter_key():
     try:
-        return st.secrets["cropkey"]
+        return st.secrets["OPENROUTER_API_KEY"]
     except Exception:
-        return os.environ.get("cropkey", None)
+        return os.environ.get("OPENROUTER_API_KEY", None)
 
 OPENROUTER_API_KEY = get_openrouter_key()
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
