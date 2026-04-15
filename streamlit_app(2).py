@@ -44,7 +44,7 @@ DATABASE_URL = "sqlite:///users.db"
 # AUTH FUNCTIONS (FIXED)
 # ==============================
 def register_user(username, password):
-    db = SessionLocal()
+
     try:
         existing = db.query(User).filter(User.username == username).first()
         if existing:
@@ -217,7 +217,7 @@ if not st.session_state.logged_in:
     if choice == "Register":
         if st.button("Register"):
             if username and password:
-                success, msg = register_user(username, password)
+                
                 if success:
                     st.success(msg + " Please login.")
                 else:
