@@ -177,6 +177,11 @@ def agent_general_advisor(question):
     )
     return call_openrouter(system, question)
 
+def get_all_listings(crop_filter=None, location_filter=None):
+    # your database query or API call here
+    # return a list of listings
+    return[]
+
 # ==============================
 # UI SETUP
 # ==============================
