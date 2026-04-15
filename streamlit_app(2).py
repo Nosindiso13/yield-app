@@ -391,7 +391,7 @@ else:
             with col2:
                 filter_loc = st.selectbox("Filter by Location", LOCATIONS, key="browse_loc")
  
-            listings = get_all_listings(
+            listings = get_my_listings(
                 crop_filter=filter_crop if filter_crop != "All" else None, 
                 location_filter=filter_loc if filter_loc != "All" else None 
          )
