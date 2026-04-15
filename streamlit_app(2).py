@@ -182,6 +182,17 @@ def get_my_listings(crop_filter=None, location_filter=None):
     # return a list of listings
     return[]
 
+def add_listing(crop, location, quantity, price):
+    #your code to save to database/ CSV /API
+    # Must return twoo values: success boolean + message string
+    try:
+        #example: save to database
+        return True,"Listing posted successfully"
+    except Exception as e:
+        return False, f"Error: {e}"
+        
+    
+
 # ==============================
 # UI SETUP
 # ==============================
