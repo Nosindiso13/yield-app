@@ -368,7 +368,7 @@ else:
     # ==========================
     # TAB 5: FARMERS MARKET (NEW)
     # ==========================
-   with tabs[4]:
+    with tabs[4]:
         st.header("Farmers Market — Buy & Sell Crops")
  
         market_tabs = st.tabs(["Browse Listings", "Post My Crop", "AI Market Advice", "My Listings"])
