@@ -182,7 +182,7 @@ def get_my_listings(crop_filter=None, location_filter=None):
     # return a list of listings
     return[]
 
-def add_listing(crop, location, quantity, price):
+def add_listing(username, farmer_name, crop, quantity_kg, price_per_kg, location,contact, description):
     #your code to save to database/ CSV /API
     # Must return twoo values: success boolean + message string
     try:
