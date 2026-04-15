@@ -387,8 +387,8 @@ else:
                 filter_loc = st.selectbox("Filter by Location", LOCATIONS, key="browse_loc")
  
             listings = get_all_listings(
-                crop_filter=filter_crop if filter_crop != "All" else None,
-                location_filter=filter_loc if filter_loc != "All" else None
+                     crop_filter=filter_crop if filter_crop != "All" else None,
+                     location_filter=filter_loc if filter_loc != "All" else None
             )
  
             if not listings:
