@@ -216,11 +216,10 @@ if not st.session_state.logged_in:
     if choice == "Register":
         if st.button("Register"):
             if username and password:
-                success, msg = register_user(username, password)
+               
                 if success:
                     st.success(msg + " Please login.")
-                else:
-                    st.error(msg)
+                
             else:
                 st.warning("Please fill in all fields.")
  
