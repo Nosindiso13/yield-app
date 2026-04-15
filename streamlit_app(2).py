@@ -220,8 +220,7 @@ if not st.session_state.logged_in:
                 
         
                     st.success(msg + " Please login.")
-                else:
-                    st.error(msg)
+               
             else:
                 st.warning("Please fill in all fields.")
 
