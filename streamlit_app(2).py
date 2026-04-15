@@ -217,7 +217,7 @@ if not st.session_state.logged_in:
         if st.button("Register"):
             if username and password:
                 
-            else: 
+            if success: 
                     st.success(msg + " Please login.")
                
             else:
