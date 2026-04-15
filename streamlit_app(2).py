@@ -368,32 +368,126 @@ else:
     # ==========================
     # TAB 5: FARMERS MARKET (NEW)
     # ==========================
-    with tabs[4]:
-        st.header("🛒 Farmers Market — Sell Your Crops")
-        st.markdown("Get AI-powered advice on where and how to sell your harvest.")
-
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            market_crop = st.selectbox("What crop do you want to sell?",
-                ["Maize", "Wheat", "Soybeans", "Rice", "Sorghum", "Groundnuts", "Sunflower", "Other"])
-        with col2:
-            quantity = st.number_input("Quantity available (kg)", min_value=1, value=500)
-        with col3:
-            market_region = st.selectbox("Your location",
-                ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
-
-        if st.button("🛒 Find Best Markets"):
-            with st.spinner("🤖 Finding best markets for you..."):
-                market_advice = agent_market_advisor(market_crop, quantity, market_region)
-            st.markdown("### 🏪 AI Market Recommendations")
-            st.markdown(f'<div class="ai-response">{market_advice}</div>', unsafe_allow_html=True)
-
-        st.divider()
-        st.markdown("### 📋 Known Markets & Buyers")
-        markets_df = pd.DataFrame({
-            "Market / Buyer": ["ZAMACE (Zambia Commodity Exchange)", "FRA (Food Reserve Agency)",
-                               "Export traders (ZIM)", "Local millers", "Cooperatives"],
-            "Best For": ["Maize, Soybeans", "Maize, Wheat", "Soybeans, Wheat", "Maize, Wheat", "All crops"],
-            "Contact": ["www.zamace.co.zm", "FRA District Office", "AgriTraders ZW", "Local listings", "District Cooperative"]
-        })
-        st.dataframe(markets_df, use_container_width=True)
+   with tabs[4]:
+        st.header("Farmers Market — Buy & Sell Crops")
+ 
+        market_tabs = st.tabs(["Browse Listings", "Post My Crop", "AI Market Advice", "My Listings"])
+ 
+        CROPS = ["All", "Maize", "Wheat", "Soybeans", "Rice", "Sorghum", "Groundnuts", "Sunflower", "Other"]
+        LOCATIONS = ["All", "Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"]
+ 
+        # BROWSE LISTINGS
+        with market_tabs[0]:
+            st.subheader("Available Crop Listings")
+            st.caption("Browse crops posted by farmers ready to sell.")
+            col1, col2 = st.columns(2)
+            with col1:
+                filter_crop = st.selectbox("Filter by Crop", CROPS, key="browse_crop")
+            with col2:
+                filter_loc = st.selectbox("Filter by Location", LOCATIONS, key="browse_loc")
+ 
+            listings = get_all_listings(
+                crop_filter=filter_crop if filter_crop != "All" else None,
+                location_filter=filter_loc if filter_loc != "All" else None
+            )
+ 
+            if not listings:
+                st.info("No listings yet. Be the first to post your crop!")
+            else:
+                st.success(f"Found **{len(listings)}** listing(s)")
+                for l in listings:
+                    st.markdown(f"""
+<div style="background:#3D2A20;border-left:4px solid #A0522D;border-radius:8px;padding:14px;margin-bottom:10px;">
+  <b style="color:#E8A838;font-size:16px;">{l.crop}</b>
+  <span style="color:#F5E6D3;font-size:13px;float:right;">Listed: {l.listed_on}</span><br>
+  <span style="color:#F5E6D3;">Farmer: <b>{l.farmer_name}</b> &nbsp;|&nbsp; Location: {l.location}</span><br>
+  <span style="color:#F5E6D3;">Qty: <b>{l.quantity_kg:,.0f} kg</b> &nbsp;|&nbsp; Price: <b>ZMW {l.price_per_kg:.2f}/kg</b></span><br>
+  <span style="color:#ccc;font-size:12px;">{l.description}</span><br>
+  <span style="color:#A0522D;font-size:12px;">Contact: <b>{l.contact}</b></span>
+</div>""", unsafe_allow_html=True)
+ 
+        # POST MY CROP
+        with market_tabs[1]:
+            st.subheader("Register Your Crop for Sale")
+            st.caption("Fill in the details below to list your crop on the marketplace.")
+ 
+            with st.form("crop_listing_form"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    farmer_name = st.text_input("Your Full Name", placeholder="e.g. John Banda")
+                    crop = st.selectbox("Crop", ["Maize", "Wheat", "Soybeans", "Rice", "Sorghum", "Groundnuts", "Sunflower", "Other"])
+                    quantity_kg = st.number_input("Quantity Available (kg)", min_value=1.0, value=100.0)
+                with col2:
+                    price_per_kg = st.number_input("Your Price (ZMW per kg)", min_value=0.1, value=5.0)
+                    location = st.selectbox("Your Location", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
+                    contact = st.text_input("Contact (phone or email)", placeholder="e.g. +260 97 1234567")
+                description = st.text_area("Description (optional)", placeholder="e.g. Sun-dried maize, ready for collection.")
+ 
+                submitted = st.form_submit_button("Post My Listing")
+                if submitted:
+                    if not farmer_name or not contact:
+                        st.warning("Please fill in your name and contact details.")
+                    else:
+                        success, msg = add_listing(
+                            username=st.session_state.username,
+                            farmer_name=farmer_name, crop=crop,
+                            quantity_kg=quantity_kg, price_per_kg=price_per_kg,
+                            location=location, contact=contact, description=description
+                        )
+                        if success:
+                            st.success(f"{msg} Your crop is now visible to buyers.")
+                            st.balloons()
+                        else:
+                            st.error(msg)
+ 
+        # AI MARKET ADVICE
+        with market_tabs[2]:
+            st.subheader("AI Market Advice")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                market_crop = st.selectbox("Crop", ["Maize", "Wheat", "Soybeans", "Rice", "Sorghum", "Groundnuts", "Sunflower"], key="ai_crop")
+            with col2:
+                quantity = st.number_input("Quantity (kg)", min_value=1, value=500, key="ai_qty")
+            with col3:
+                market_region = st.selectbox("Location", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"], key="ai_region")
+ 
+            if st.button("Get AI Selling Advice"):
+                with st.spinner("Finding best markets for you..."):
+                    market_advice = agent_market_advisor(market_crop, quantity, market_region)
+                st.markdown("### AI Recommendations")
+                st.markdown(f'<div class="ai-response">{market_advice}</div>', unsafe_allow_html=True)
+ 
+            st.divider()
+            st.markdown("### Known Markets & Buyers")
+            markets_df = pd.DataFrame({
+                "Market / Buyer": ["ZAMACE", "FRA (Food Reserve Agency)", "Export Traders (ZIM)", "Local Millers", "Cooperatives"],
+                "Best For": ["Maize, Soybeans", "Maize, Wheat", "Soybeans, Wheat", "Maize, Wheat", "All crops"],
+                "Contact": ["www.zamace.co.zm", "FRA District Office", "AgriTraders ZW", "Local listings", "District Cooperative"]
+            })
+            st.dataframe(markets_df, use_container_width=True)
+ 
+        # MY LISTINGS
+        with market_tabs[3]:
+            st.subheader("My Posted Listings")
+            st.caption("Manage the crops you have listed for sale.")
+            my_listings = get_my_listings(st.session_state.username)
+ 
+            if not my_listings:
+                st.info("You have not posted any listings yet. Go to Post My Crop to get started!")
+            else:
+                st.success(f"You have **{len(my_listings)}** active listing(s)")
+                for l in my_listings:
+                    col1, col2 = st.columns([5, 1])
+                    with col1:
+                        st.markdown(f"""
+<div style="background:#3D2A20;border-left:4px solid #4A7C59;border-radius:8px;padding:12px;margin-bottom:8px;">
+  <b style="color:#E8A838;">{l.crop}</b> — {l.quantity_kg:,.0f} kg @ ZMW {l.price_per_kg:.2f}/kg<br>
+  <span style="color:#F5E6D3;font-size:12px;">Location: {l.location} | Listed: {l.listed_on} | Contact: {l.contact}</span>
+</div>""", unsafe_allow_html=True)
+                    with col2:
+                        if st.button("Delete", key=f"del_{l.id}"):
+                            if delete_listing(l.id, st.session_state.username):
+                                st.success("Deleted!")
+                                st.rerun()
+ 
+                
