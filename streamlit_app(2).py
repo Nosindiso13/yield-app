@@ -31,7 +31,7 @@ MODEL = "openrouter/free"  # Auto-selects any available free model — never bre
 # ==============================
 
 
-DATABASE_URL = "sqlite:///users.db"
+DATABASE_URL = st.secrets["DATABASE_URL"]
                
 
     
