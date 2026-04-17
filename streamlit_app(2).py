@@ -28,7 +28,7 @@ MODEL = "openrouter/free"
 # ==============================
 @st.cache_resource
 def get_connection():
-    return psycopg2.connect(st.secrets["SUPABASE_DB_URL"], sslmode="require")
+    return psycopg2.connect(st.secrets["DATABASE_URL"], sslmode="require")
 
 def get_db():
     try:
@@ -67,7 +67,6 @@ def init_db():
     conn.commit()
     cur.close()
 
-init_db()
 
 # ==============================
 # AUTH FUNCTIONS
