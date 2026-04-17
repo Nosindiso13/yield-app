@@ -4,7 +4,7 @@ import numpy as np
 import os
 import requests
 
-import psycopg2.extras
+
 import bcrypt
 import joblib
 from PIL import Image
