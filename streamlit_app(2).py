@@ -3,9 +3,6 @@ import pandas as pd
 import numpy as np
 import os
 import requests
-
-
-import bcrypt
 import joblib
 from PIL import Image
 from datetime import datetime
