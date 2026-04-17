@@ -5,6 +5,7 @@ import os
 import requests
 import json
 from PIL import Image
+from supabase import create_client, Client
 # ==============================
 # 🔐 SECURE API KEY SETUP
 # ==============================
@@ -29,10 +30,127 @@ MODEL = "openrouter/free"  # Auto-selects any available free model — never bre
 # ==============================
 # DATABASE SETUP (SQLite + SQLAlchemy)
 # ==============================
+# ── Connect to Supabase ──────────────────────────────────────────────────────
+@st.cache_resource
+def get_supabase() -> Client:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
+ 
+supabase = get_supabase()
+ 
+# ==============================
+# 🗄️ CREATE TABLES (run once)
+# ==============================
+# Go to Supabase → SQL Editor and run this SQL to create your tables:
+#
+# CREATE TABLE IF NOT EXISTS users (
+#     id SERIAL PRIMARY KEY,
+#     username TEXT UNIQUE NOT NULL,
+#     password TEXT NOT NULL
+# );
+#
+# CREATE TABLE IF NOT EXISTS crop_listings (
+#     id SERIAL PRIMARY KEY,
+#     username TEXT NOT NULL,
+#     farmer_name TEXT NOT NULL,
+#     crop TEXT NOT NULL,
+#     quantity_kg FLOAT NOT NULL,
+#     price_per_kg FLOAT NOT NULL,
+#     location TEXT NOT NULL,
+#     contact TEXT NOT NULL,
+#     description TEXT,
+#     listed_on TEXT NOT NULL
+# );
+ 
+# ==============================
+# AUTH FUNCTIONS
+# ==============================
+def register_user(username, password):
+    try:
+        # Check if username already exists
+        existing = supabase.table("users").select("username").eq("username", username).execute()
+        if existing.data:
+            return False, "Username already exists."
+ 
+        hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        supabase.table("users").insert({
+            "username": username,
+            "password": hashed
+        }).execute()
+        return True, "Registered successfully!"
+    except Exception as e:
+        return False, f"Error: {str(e)}"
+ 
+def login_user(username, password):
+    try:
+        result = supabase.table("users").select("password").eq("username", username).execute()
+        if result.data:
+            stored_hash = result.data[0]["password"]
+            return bcrypt.checkpw(password.encode(), stored_hash.encode())
+        return False
+    except Exception:
+        return False
+ 
+# ==============================
+# MARKETPLACE FUNCTIONS
+# ==============================
+def add_listing(username, farmer_name, crop, quantity_kg, price_per_kg, location, contact, description):
+    try:
+        from datetime import datetime
+        supabase.table("crop_listings").insert({
+            "username": username,
+            "farmer_name": farmer_name,
+            "crop": crop,
+            "quantity_kg": quantity_kg,
+            "price_per_kg": price_per_kg,
+            "location": location,
+            "contact": contact,
+            "description": description,
+            "listed_on": datetime.now().strftime("%Y-%m-%d")
+        }).execute()
+        return True, "Listing posted successfully!"
+    except Exception as e:
+        return False, f"Error: {str(e)}"
+ 
+def get_all_listings(crop_filter=None, location_filter=None):
+    try:
+        query = supabase.table("crop_listings").select("*")
+        if crop_filter and crop_filter != "All":
+            query = query.eq("crop", crop_filter)
+        if location_filter and location_filter != "All":
+            query = query.eq("location", location_filter)
+        result = query.order("id", desc=True).execute()
+        return result.data or []
+    except Exception:
+        return []
+ 
+def get_my_listings(username):
+    try:
+        result = supabase.table("crop_listings").select("*").eq("username", username).order("id", desc=True).execute()
+        return result.data or []
+    except Exception:
+        return []
+ 
+def delete_listing(listing_id, username):
+    try:
+        supabase.table("crop_listings").delete().eq("id", listing_id).eq("username", username).execute()
+        return True
+    except Exception:
+        return False
+ 
+# ==============================
+# ADMIN FUNCTION (optional)
+# ==============================
+def get_all_users():
+    try:
+        result = supabase.table("users").select("id, username").execute()
+        return result.data or []
+    except Exception:
+        return []
 
 
-DATABASE_URL = st.secrets["DATABASE_URL"]
-               
+
 
     
    
