@@ -4,8 +4,10 @@ import numpy as np
 import os
 import requests
 import json
+import psycopg2
+import psycopg2.extras
 from PIL import Image
-from supabase import create_client, Client
+
 # ==============================
 # 🔐 SECURE API KEY SETUP
 # ==============================
