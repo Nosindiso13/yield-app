@@ -3,8 +3,10 @@ import pandas as pd
 import numpy as np
 import os
 import requests
+import psycopg2
 from PIL import Image
 from datetime import datetime
+st.write("psycopg2 version:", psycopg2.__version__)
 
 # ==============================
 # API KEY SETUP
