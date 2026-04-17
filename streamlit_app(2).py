@@ -33,8 +33,8 @@ MODEL = "openrouter/free"  # Auto-selects any available free model — never bre
 # ── Connect to Supabase ──────────────────────────────────────────────────────
 @st.cache_resource
 def get_supabase() -> Client:
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
+    url = st.secrets["DATABASE_URL"]
+    key = st.secrets["superbase_key"]
     return create_client(url, key)
  
 supabase = get_supabase()
