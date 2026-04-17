@@ -4,8 +4,8 @@ numpy
 requests
 scikit-learn
 xgboost
-Pillow
-SQLAlchemy
+PilloW
+psycopg2-binary
 passlib[bycrpyt]
 passlib.context==1.7.4
 python-jose[cryptography]
