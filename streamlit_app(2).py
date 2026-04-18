@@ -7,9 +7,7 @@ try:
     import psycopg2
     import psycopg2.extras
 except ImportError:
-    import subprocess, sys
-    
-    import psycopg2.extras  
+    import subprocess, sys  
 from PIL import Image
 from datetime import datetime
 
