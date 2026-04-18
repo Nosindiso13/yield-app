@@ -32,14 +32,14 @@ MODEL = "openrouter/free"
 # ==============================
 def supa_headers():
     return {
-        "apikey": st.secrets["SUPABASE_KEY"],
+        "apikey": st.secrets["superbase_key"],
         "Authorization": f"Bearer {st.secrets['SUPABASE_KEY']}",
         "Content-Type": "application/json",
         "Prefer": "return=representation"
     }
 
 def supa_url(table):
-    return f"{st.secrets['SUPABASE_URL']}/rest/v1/{table}"
+    return f"{st.secrets['DATABASE_URL']}/rest/v1/{table}"
 
 # ==============================
 # AUTH FUNCTIONS
