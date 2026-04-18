@@ -52,10 +52,22 @@ def login_user(username, password):
             params={"username": f"eq.{username}", "select": "password"}
         )
         data = resp.json()
-        if data and len(data) > 0:
-            stored_hash = data[0]["password"]
-            return bcrypt.checkpw(password.encode(), stored_hash.encode())
-        return False
+
+        # DEBUG — remove after fixing
+        st.info(f"DEBUG: status={resp.status_code} | rows found={len(data) if isinstance(data, list) else 'error'} | response={str(data)[:200]}")
+
+        if not isinstance(data, list):
+            st.error(f"Supabase error: {data}")
+            return False
+        if len(data) == 0:
+            st.error("No user found with that username.")
+            return False
+
+        stored_hash = data[0]["password"]
+        match = bcrypt.checkpw(password.encode(), stored_hash.encode())
+        if not match:
+            st.error("Password does not match.")
+        return match
     except Exception as e:
         st.error(f"Login error: {str(e)}")
         return False
