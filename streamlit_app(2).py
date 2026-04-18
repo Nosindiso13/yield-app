@@ -9,8 +9,7 @@ try:
 except ImportError:
     import subprocess, sys
     
-    import psycopg2
-    import psycopg2.extras
+    
 from PIL import Image
 from datetime import datetime
 
