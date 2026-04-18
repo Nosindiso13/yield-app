@@ -290,7 +290,7 @@ if not st.session_state.logged_in:
    
 
     
-            if username and password:
+        
                 if login_user(username, password):
                     st.session_state.logged_in = True
                     st.session_state.username = username
