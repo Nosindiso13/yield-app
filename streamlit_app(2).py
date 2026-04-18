@@ -1,9 +1,9 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import os
 import requests
+import joblib
 from PIL import Image
 from datetime import datetime
 
@@ -33,14 +33,14 @@ MODEL = "openrouter/free"
 # ==============================
 def supa_headers():
     return {
-        "apikey": st.secrets["superbase_key"],
-        "Authorization": f"Bearer {st.secrets['superbase_key']}",
+        "apikey": st.secrets["SUPABASE_KEY"],
+        "Authorization": f"Bearer {st.secrets['SUPABASE_KEY']}",
         "Content-Type": "application/json",
         "Prefer": "return=representation"
     }
 
 def supa_url(table):
-    return f"{st.secrets['DATABASE_URL']}/rest/v1/{table}"
+    return f"{st.secrets['SUPABASE_URL']}/rest/v1/{table}"
 
 # ==============================
 # AUTH FUNCTIONS
@@ -63,6 +63,29 @@ def login_user(username, password):
     except Exception as e:
         st.error(f"Login error: {str(e)}")
         return False
+
+def register_user(username, password):
+    try:
+        # Check if username exists
+        resp = requests.get(
+            supa_url("users"),
+            headers=supa_headers(),
+            params={"username": f"eq.{username}", "select": "username"}
+        )
+        data = resp.json()
+        if isinstance(data, list) and len(data) > 0:
+            return False, "Username already exists."
+        # Insert new user
+        resp = requests.post(
+            supa_url("users"),
+            headers=supa_headers(),
+            json={"username": username, "password": "not_used", "plain_password": password}
+        )
+        if resp.status_code in [200, 201]:
+            return True, "Registered successfully!"
+        return False, f"Error: {resp.text}"
+    except Exception as e:
+        return False, f"Error: {str(e)}"
 
 # ==============================
 # MARKETPLACE FUNCTIONS
@@ -232,22 +255,35 @@ if "username" not in st.session_state:
 # ==============================
 if not st.session_state.logged_in:
     st.title("🌱 AI Crop Advisory System")
-    st.subheader("🔐 Login")
+    st.subheader("🔐 Login / Register")
 
+    choice = st.radio("Select Option", ["Login", "Register"])
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    if st.button("Login"):
-        if username and password:
-            if login_user(username, password):
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.success("Login successful!")
-                st.rerun()
+    if choice == "Register":
+        if st.button("Register"):
+            if username and password:
+                success, msg = register_user(username, password)
+                if success:
+                    st.success(msg + " Please login.")
+                else:
+                    st.error(msg)
             else:
-                st.error("Invalid credentials.")
-        else:
-            st.warning("Please fill in all fields.")
+                st.warning("Please fill in all fields.")
+
+    if choice == "Login":
+        if st.button("Login"):
+            if username and password:
+                if login_user(username, password):
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.success("Login successful!")
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials.")
+            else:
+                st.warning("Please fill in all fields.")
 
 # ==============================
 # MAIN APP
