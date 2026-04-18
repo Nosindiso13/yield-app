@@ -8,7 +8,7 @@ try:
     import psycopg2.extras
 except ImportError:
     import subprocess, sys
-    subprocess.run([sys.executable, "-m", "pip", "install", "psycopg2-binary"], check=True)
+    
     import psycopg2
     import psycopg2.extras
 from PIL import Image
