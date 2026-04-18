@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -49,25 +50,16 @@ def login_user(username, password):
         resp = requests.get(
             supa_url("users"),
             headers=supa_headers(),
-            params={"username": f"eq.{username}", "select": "password"}
+            params={"username": f"eq.{username}", "select": "password,plain_password"}
         )
         data = resp.json()
-
-        # DEBUG — remove after fixing
-        st.info(f"DEBUG: status={resp.status_code} | rows found={len(data) if isinstance(data, list) else 'error'} | response={str(data)[:200]}")
-
-        if not isinstance(data, list):
-            st.error(f"Supabase error: {data}")
+        if not isinstance(data, list) or len(data) == 0:
             return False
-        if len(data) == 0:
-            st.error("No user found with that username.")
-            return False
-
-        stored_hash = data[0]["password"]
-        match = bcrypt.checkpw(password.encode(), stored_hash.encode())
-        if not match:
-            st.error("Password does not match.")
-        return match
+        row = data[0]
+        # Plain password login (simple & reliable)
+        if "plain_password" in row and row["plain_password"]:
+            return row["plain_password"] == password
+        return False
     except Exception as e:
         st.error(f"Login error: {str(e)}")
         return False
