@@ -5,7 +5,7 @@ requests
 scikit-learn
 xgboost
 PilloW
-psycopg2-extras
+psycopg2-binary==2.9.9
 passlib[bycrpyt]
 passlib.context==1.7.4
 python-jose[cryptography]
