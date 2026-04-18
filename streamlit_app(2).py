@@ -291,7 +291,7 @@ if not st.session_state.logged_in:
 
     
         
-                if login_user(username, password):
+        
                     st.session_state.logged_in = True
                     st.session_state.username = username
                     st.success("Login successful!")
