@@ -3,14 +3,9 @@ import pandas as pd
 import numpy as np
 import os
 import requests
-try:
-    import psycopg2
-    import psycopg2.extras
-except ImportError:
-    import subprocess, sys  
+import bcrypt
 from PIL import Image
 from datetime import datetime
-
 
 # ==============================
 # API KEY SETUP
@@ -30,80 +25,40 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "openrouter/free"
 
 # ==============================
-# SUPABASE DATABASE SETUP
+# SUPABASE REST API SETUP
+# No extra packages needed — uses requests which is already installed
+# Secrets needed:
+#   SUPABASE_URL = "https://xxxx.supabase.co"
+#   SUPABASE_KEY = "your-anon-public-key"  (from Supabase -> Settings -> API)
 # ==============================
-@st.cache_resource
-def get_connection():
-    return psycopg2.connect(st.secrets["DATABASE_URL"], sslmode="require")
+def supa_headers():
+    return {
+        "apikey": st.secrets["SUPABASE_KEY"],
+        "Authorization": f"Bearer {st.secrets['SUPABASE_KEY']}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
 
-def get_db():
-    try:
-        conn = get_connection()
-        conn.isolation_level  # ping
-        return conn
-    except Exception:
-        # reconnect if dropped
-        st.cache_resource.clear()
-        return get_connection()
-
-def init_db():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        );
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS crop_listings (
-            id SERIAL PRIMARY KEY,
-            username TEXT NOT NULL,
-            farmer_name TEXT NOT NULL,
-            crop TEXT NOT NULL,
-            quantity_kg FLOAT NOT NULL,
-            price_per_kg FLOAT NOT NULL,
-            location TEXT NOT NULL,
-            contact TEXT NOT NULL,
-            description TEXT,
-            listed_on TEXT NOT NULL
-        );
-    """)
-    conn.commit()
-    cur.close()
-
+def supa_url(table):
+    return f"{st.secrets['SUPABASE_URL']}/rest/v1/{table}"
 
 # ==============================
 # AUTH FUNCTIONS
 # ==============================
-def register_user(username, password):
-    try:
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT username FROM users WHERE username = %s", (username,))
-        if cur.fetchone():
-            cur.close()
-            return False, "Username already exists."
-        hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-        cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed))
-        conn.commit()
-        cur.close()
-        return True, "Registered successfully!"
-    except Exception as e:
-        return False, f"Error: {str(e)}"
-
 def login_user(username, password):
     try:
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT password FROM users WHERE username = %s", (username,))
-        row = cur.fetchone()
-        cur.close()
-        if row:
-            return bcrypt.checkpw(password.encode(), row[0].encode())
+        resp = requests.get(
+            supa_url("users"),
+            headers=supa_headers(),
+            params={"username": f"eq.{username}", "select": "password"}
+        )
+        data = resp.json()
+        if data and len(data) > 0:
+            stored_hash = data[0]["password"]
+            return bcrypt.checkpw(password.encode(), stored_hash.encode())
         return False
-    except Exception:
+    except Exception as e:
+        st.error(f"Login error: {str(e)}")
         return False
 
 # ==============================
@@ -111,72 +66,65 @@ def login_user(username, password):
 # ==============================
 def add_listing(username, farmer_name, crop, quantity_kg, price_per_kg, location, contact, description):
     try:
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO crop_listings
-            (username, farmer_name, crop, quantity_kg, price_per_kg, location, contact, description, listed_on)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (username, farmer_name, crop, quantity_kg, price_per_kg,
-              location, contact, description, datetime.now().strftime("%Y-%m-%d")))
-        conn.commit()
-        cur.close()
-        return True, "Listing posted successfully!"
+        resp = requests.post(
+            supa_url("crop_listings"),
+            headers=supa_headers(),
+            json={
+                "username": username, "farmer_name": farmer_name,
+                "crop": crop, "quantity_kg": quantity_kg,
+                "price_per_kg": price_per_kg, "location": location,
+                "contact": contact, "description": description,
+                "listed_on": datetime.now().strftime("%Y-%m-%d")
+            }
+        )
+        if resp.status_code in [200, 201]:
+            return True, "Listing posted successfully!"
+        return False, f"Error: {resp.text}"
     except Exception as e:
         return False, f"Error: {str(e)}"
 
 def get_all_listings(crop_filter=None, location_filter=None):
     try:
-        conn = get_db()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        query = "SELECT * FROM crop_listings"
-        conditions, params = [], []
+        params = {"select": "*", "order": "id.desc"}
         if crop_filter and crop_filter != "All":
-            conditions.append("crop = %s")
-            params.append(crop_filter)
+            params["crop"] = f"eq.{crop_filter}"
         if location_filter and location_filter != "All":
-            conditions.append("location = %s")
-            params.append(location_filter)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-        query += " ORDER BY id DESC"
-        cur.execute(query, params)
-        rows = cur.fetchall()
-        cur.close()
-        return rows
+            params["location"] = f"eq.{location_filter}"
+        resp = requests.get(supa_url("crop_listings"), headers=supa_headers(), params=params)
+        return resp.json() if resp.status_code == 200 else []
     except Exception:
         return []
 
 def get_my_listings(username):
     try:
-        conn = get_db()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT * FROM crop_listings WHERE username = %s ORDER BY id DESC", (username,))
-        rows = cur.fetchall()
-        cur.close()
-        return rows
+        resp = requests.get(
+            supa_url("crop_listings"),
+            headers=supa_headers(),
+            params={"username": f"eq.{username}", "select": "*", "order": "id.desc"}
+        )
+        return resp.json() if resp.status_code == 200 else []
     except Exception:
         return []
 
 def delete_listing(listing_id, username):
     try:
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM crop_listings WHERE id = %s AND username = %s", (listing_id, username))
-        conn.commit()
-        cur.close()
-        return True
+        resp = requests.delete(
+            supa_url("crop_listings"),
+            headers=supa_headers(),
+            params={"id": f"eq.{listing_id}", "username": f"eq.{username}"}
+        )
+        return resp.status_code in [200, 204]
     except Exception:
         return False
 
 def get_all_users():
     try:
-        conn = get_db()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, username FROM users ORDER BY id DESC")
-        rows = cur.fetchall()
-        cur.close()
-        return rows
+        resp = requests.get(
+            supa_url("users"),
+            headers=supa_headers(),
+            params={"select": "id,username", "order": "id.desc"}
+        )
+        return resp.json() if resp.status_code == 200 else []
     except Exception:
         return []
 
@@ -282,10 +230,10 @@ if "username" not in st.session_state:
 if not st.session_state.logged_in:
     st.title("🌱 AI Crop Advisory System")
     st.subheader("🔐 Login")
- 
+
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
- 
+
     if st.button("Login"):
         if username and password:
             if login_user(username, password):
@@ -297,13 +245,6 @@ if not st.session_state.logged_in:
                 st.error("Invalid credentials.")
         else:
             st.warning("Please fill in all fields.")
-
-   
-
-    
-        
-        
-                    
 
 # ==============================
 # MAIN APP
