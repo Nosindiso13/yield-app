@@ -3,7 +3,14 @@ import pandas as pd
 import numpy as np
 import os
 import requests
-
+try:
+    import psycopg2
+    import psycopg2.extras
+except ImportError:
+    import subprocess, sys
+    subprocess.run([sys.executable, "-m", "pip", "install", "psycopg2-binary"], check=True)
+    import psycopg2
+    import psycopg2.extras
 from PIL import Image
 from datetime import datetime
 
