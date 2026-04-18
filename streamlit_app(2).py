@@ -283,22 +283,13 @@ if "username" not in st.session_state:
 # ==============================
 if not st.session_state.logged_in:
     st.title("🌱 AI Crop Advisory System")
-    st.subheader("🔐 Login / Register")
+    st.subheader("🔐 Login ")
 
-    choice = st.radio("Select Option", ["Login", "Register"])
+    choice = st.radio( ["Login"])
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    if choice == "Register":
-        if st.button("Register"):
-            if username and password:
-                success, msg = register_user(username, password)
-                if success:
-                    st.success(msg + " Please login.")
-                else:
-                    st.error(msg)
-            else:
-                st.warning("Please fill in all fields.")
+   
 
     if choice == "Login":
         if st.button("Login"):
