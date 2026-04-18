@@ -281,11 +281,22 @@ if "username" not in st.session_state:
 # ==============================
 if not st.session_state.logged_in:
     st.title("🌱 AI Crop Advisory System")
-    st.subheader("🔐 Login ")
-
-
+    st.subheader("🔐 Login")
+ 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
+ 
+    if st.button("Login"):
+        if username and password:
+            if login_user(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success("Login successful!")
+                st.rerun()
+            else:
+                st.error("Invalid credentials.")
+        else:
+            st.warning("Please fill in all fields.")
 
    
 
