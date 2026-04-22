@@ -310,7 +310,7 @@ else:
         with st.form("prediction_form"):
             col1, col2 = st.columns(2)
             with col1:
-                area = st.selectbox("Area", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
+                area = st.selectbox("Area", ["Monze", "Kafue", "Copperbelt", "Mazabuka", "Kitwe", "Lusaka"])
                 crop = st.selectbox("Crop", ["Maize", "Wheat", "Rice", "Sorghum", "Soybeans"])
                 year = st.number_input("Year", 2024, 2035, 2025)
             with col2:
@@ -377,7 +377,7 @@ else:
         st.header("📊 Trending Crops & Market Prices")
         col1, col2 = st.columns(2)
         with col1:
-            trend_region = st.selectbox("Your Region", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
+            trend_region = st.selectbox("Your Region", ["Monze", "Kafue", "Copperbelt", "Mazabuka", "Kitwe", "Lusaka"])
         with col2:
             season = st.selectbox("Season", ["Rainy Season (Oct–Apr)", "Dry Season (May–Sep)", "Post-Harvest"])
         price_data = {
@@ -439,7 +439,7 @@ else:
                     quantity_kg = st.number_input("Quantity Available (kg)", min_value=1.0, value=100.0)
                 with col2:
                     price_per_kg = st.number_input("Your Price (ZMW per kg)", min_value=0.1, value=5.0)
-                    location = st.selectbox("Your Location", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"])
+                    location = st.selectbox("Your Location", ["Monze", "Kafue", "Copperbelt", "Mazabuka", "Kitwe", "Lusaka"])
                     contact = st.text_input("Contact (phone or email)", placeholder="e.g. +260 97 1234567")
                 description = st.text_area("Description (optional)", placeholder="e.g. Sun-dried maize, ready for collection.")
                 submitted = st.form_submit_button("Post My Listing")
@@ -469,7 +469,7 @@ else:
             with col2:
                 quantity = st.number_input("Quantity (kg)", min_value=1, value=500, key="ai_qty")
             with col3:
-                market_region = st.selectbox("Location", ["Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"], key="ai_region")
+                market_region = st.selectbox("Location", ["Monze", "Kafue", "copperbelt", "Mazabuka", "Kitwe", "Lusaka"], key="ai_region")
             if st.button("Get AI Selling Advice"):
                 with st.spinner("Finding best markets for you..."):
                     market_advice = agent_market_advisor(market_crop, quantity, market_region)
