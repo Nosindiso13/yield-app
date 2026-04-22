@@ -399,7 +399,7 @@ else:
         market_tabs = st.tabs(["Browse Listings", "Post My Crop", "AI Market Advice", "My Listings"])
 
         CROPS = ["All", "Maize", "Wheat", "Soybeans", "Rice", "Sorghum", "Groundnuts", "Sunflower", "Other"]
-        LOCATIONS = ["All", "Zambia", "Zimbabwe", "Malawi", "Tanzania", "Mozambique"]
+        LOCATIONS = ["All", "Monze", "Kafue", "Copperbelt", "Mazabuka", "Kitwe", "Lusaka"]
 
         # BROWSE LISTINGS
         with market_tabs[0]:
